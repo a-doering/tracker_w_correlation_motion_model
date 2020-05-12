@@ -24,6 +24,7 @@ class Tracker:
 		self.regression_person_thresh = tracker_cfg['regression_person_thresh']
 		self.detection_nms_thresh = tracker_cfg['detection_nms_thresh']
 		self.regression_nms_thresh = tracker_cfg['regression_nms_thresh']
+		self.boxes_enlargement_factor = tracker_cfg['boxes_enlargement_factor']
 		self.public_detections = tracker_cfg['public_detections']
 		self.inactive_patience = tracker_cfg['inactive_patience']
 		self.do_reid = tracker_cfg['do_reid']
@@ -246,6 +247,12 @@ class Tracker:
 				if t.last_v.nelement() > 0:
 					self.motion_step(t)
 
+	def enlarge_boxes(self, boxes):
+		if self.boxes_enlargement_factor > 1.0:
+			#TODO: enlarge bounding boxes
+			pass
+		return boxes
+
 	def step(self, blob):
 		"""This function should be called every timestep to perform tracking with a blob
 		containing the image information.
@@ -270,6 +277,7 @@ class Tracker:
 			boxes, scores = self.obj_detect.detect(blob['img'])
 
 		if boxes.nelement() > 0:
+			boxes = self.enlarge_boxes(boxes)
 			boxes = clip_boxes_to_image(boxes, blob['img'].shape[-2:])
 
 			# Filter out tracks that have too low person score
