@@ -38,7 +38,7 @@ tracktor:
     # NMS theshold while tracking
     regression_nms_thresh: 0.6
     # Bounding boxes enlargement factor
-    boxes_enlargement_factor: 1.1
+    boxes_enlargement_factor: 2.0
     # motion model settings
     motion_model:
       enabled: False

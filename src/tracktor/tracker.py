@@ -24,7 +24,7 @@ class Tracker:
 		self.regression_person_thresh = tracker_cfg['regression_person_thresh']
 		self.detection_nms_thresh = tracker_cfg['detection_nms_thresh']
 		self.regression_nms_thresh = tracker_cfg['regression_nms_thresh']
-		self.boxes_enlargement_factor = tracker_cfg['boxes_enlargement_factor']
+		self.boxes_enlargement_factor = tracker_cfg['bb_enlargement_factor']
 		self.public_detections = tracker_cfg['public_detections']
 		self.inactive_patience = tracker_cfg['inactive_patience']
 		self.do_reid = tracker_cfg['do_reid']
@@ -248,9 +248,18 @@ class Tracker:
 					self.motion_step(t)
 
 	def enlarge_boxes(self, boxes):
+		"""Enlarges bounding box widht and height by some factor."""
 		if self.boxes_enlargement_factor > 1.0:
-			#TODO: enlarge bounding boxes
-			pass
+			delta = (self.boxes_enlargement_factor - 1) / 2
+
+			width_delta = (boxes[:, 2] - boxes[:, 0]) * delta
+			height_delta = (boxes[:, 3] - boxes[:, 1]) * delta
+
+			boxes[:, 0] -= width_delta
+			boxes[:, 1] -= height_delta
+			boxes[:, 2] += width_delta
+			boxes[:, 3] += height_delta
+
 		return boxes
 
 	def step(self, blob):
