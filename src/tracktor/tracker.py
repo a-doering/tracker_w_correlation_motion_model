@@ -24,7 +24,7 @@ class Tracker:
 		self.regression_person_thresh = tracker_cfg['regression_person_thresh']
 		self.detection_nms_thresh = tracker_cfg['detection_nms_thresh']
 		self.regression_nms_thresh = tracker_cfg['regression_nms_thresh']
-		self.boxes_enlargement_factor = tracker_cfg['bb_enlargement_factor']
+		self.boxes_enlargement_factor = tracker_cfg['boxes_enlargement_factor']
 		self.public_detections = tracker_cfg['public_detections']
 		self.inactive_patience = tracker_cfg['inactive_patience']
 		self.do_reid = tracker_cfg['do_reid']
