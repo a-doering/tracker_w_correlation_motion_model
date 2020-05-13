@@ -78,8 +78,8 @@ class Tracker:
 		"""Regress the position of the tracks and also checks their scores."""
 		pos = self.get_pos()
 
-		# regress
-		boxes, scores = self.obj_detect.predict_boxes(pos)
+		# regress the enlarged bounding boxes
+		boxes, scores = self.obj_detect.predict_boxes(self.enlarge_boxes(pos))
 		pos = clip_boxes_to_image(boxes, blob['img'].shape[-2:])
 
 		s = []
@@ -286,7 +286,6 @@ class Tracker:
 			boxes, scores = self.obj_detect.detect(blob['img'])
 
 		if boxes.nelement() > 0:
-			boxes = self.enlarge_boxes(boxes)
 			boxes = clip_boxes_to_image(boxes, blob['img'].shape[-2:])
 
 			# Filter out tracks that have too low person score
