@@ -79,7 +79,8 @@ class Tracker:
 		pos = self.get_pos()
 
 		# regress the enlarged bounding boxes
-		boxes, scores = self.obj_detect.predict_boxes(self.enlarge_boxes(pos))
+		enlarged_boxes = clip_boxes_to_image(self.enlarge_boxes(pos), blob['img'].shape[-2:])
+		boxes, scores = self.obj_detect.predict_boxes(enlarged_boxes)
 		pos = clip_boxes_to_image(boxes, blob['img'].shape[-2:])
 
 		s = []
