@@ -28,3 +28,6 @@ __pycache__
 
 # Virtual Environment
 .venv/
+
+# Google Drive
+drive_output
