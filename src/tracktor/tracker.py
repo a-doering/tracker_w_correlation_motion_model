@@ -44,6 +44,9 @@ class Tracker:
 		self.im_index = 0
 		self.results = {}
 
+		self.nms_killed_tracks = []
+		self.score_killed_tracks = []
+
 	def reset(self, hard=True):
 		self.tracks = []
 		self.inactive_tracks = []
@@ -89,6 +92,7 @@ class Tracker:
 			t.score = scores[i]
 			if scores[i] <= self.regression_person_thresh:
 				self.tracks_to_inactive([t])
+				self.score_killed_tracks.append({'id': t.id, 'frame': self.im_index})
 			else:
 				s.append(scores[i])
 				# t.prev_pos = t.pos
@@ -327,6 +331,10 @@ class Tracker:
 				# nms here if tracks overlap
 				keep = nms(self.get_pos(), person_scores, self.regression_nms_thresh)
 
+				for i in list(range(len(self.tracks))):
+					if i not in keep:
+						self.nms_killed_tracks.append({'id': self.tracks[i].id, 'frame': self.im_index})
+
 				self.tracks_to_inactive([self.tracks[i] for i in list(range(len(self.tracks))) if i not in keep])
 
 				if keep.nelement() > 0 and self.do_reid:
@@ -393,6 +401,12 @@ class Tracker:
 
 	def get_results(self):
 		return self.results
+
+	def get_score_killed_tracks(self):
+		return self.score_killed_tracks
+
+	def get_nms_killed_tracks(self):
+		return self.nms_killed_tracks
 
 
 class Track(object):
