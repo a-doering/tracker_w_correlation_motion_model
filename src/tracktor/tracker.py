@@ -50,6 +50,8 @@ class Tracker:
 	def reset(self, hard=True):
 		self.tracks = []
 		self.inactive_tracks = []
+		self.nms_killed_tracks = []
+		self.score_killed_tracks = []
 
 		if hard:
 			self.track_num = 0

@@ -114,13 +114,15 @@ def main(tracktor, reid, _config, _log, _run):
         if tracktor['write_images']:
             plot_sequence(results, seq, osp.join(output_dir, tracktor['dataset'], str(seq)))
 
-        _log.info(f"Score Killed Tracks:")
-        for kill in tracker.get_score_killed_tracks():
-            _log.info(f"Track [ {kill['id']} ] killed in frame [ {kill['frame']} ]")
+        score_killed_tracks = tracker.get_score_killed_tracks()
+        _log.info(f"Score Killed Tracks: ({len(score_killed_tracks)})")
+        for kill in score_killed_tracks:
+            _log.info(f"Track [ {kill['id']:3d} ] killed in frame [ {kill['frame']:3d} ]")
 
-        _log.info(f"NMS Killed Tracks:")
-        for kill in tracker.get_nms_killed_tracks():
-            _log.info(f"Track [ {kill['id']} ] killed in frame [ {kill['frame']} ]")
+        nms_killed_tracks = tracker.get_nms_killed_tracks()
+        _log.info(f"NMS Killed Tracks ({len(nms_killed_tracks)}):")
+        for kill in nms_killed_tracks:
+            _log.info(f"Track [ {kill['id']:3d} ] killed in frame [ {kill['frame']:3d} ]")
 
     _log.info(f"Tracking runtime for all sequences (without evaluation or image writing): "
               f"{time_total:.2f} s for {num_frames} frames ({num_frames / time_total:.2f} Hz)")
