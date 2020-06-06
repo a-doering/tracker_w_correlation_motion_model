@@ -14,6 +14,7 @@ import yaml
 from tqdm import tqdm
 import sacred
 from sacred import Experiment
+from tracktor.correlation import CorrelationHead
 from tracktor.frcnn_fpn import FRCNN_FPN
 from tracktor.config import get_output_dir
 from tracktor.datasets.factory import Datasets
@@ -53,13 +54,19 @@ def main(tracktor, reid, _config, _log, _run):
     # Initialize the modules #
     ##########################
 
-    # object detection
     _log.info("Initializing object detector.")
 
+    # correlation head
+    correlation_head = CorrelationHead()
+    # correlation_head.load_state_dict(torch.load(_config['tracktor']['correlation_weights'],
+    #                             map_location=lambda storage, loc: storage))
+    correlation_head.eval()
+    correlation_head.cuda()
+
+    # object detection
     obj_detect = FRCNN_FPN(num_classes=2)
     obj_detect.load_state_dict(torch.load(_config['tracktor']['obj_detect_model'],
                                map_location=lambda storage, loc: storage))
-
     obj_detect.eval()
     obj_detect.cuda()
 
@@ -74,7 +81,7 @@ def main(tracktor, reid, _config, _log, _run):
     if 'oracle' in tracktor:
         tracker = OracleTracker(obj_detect, reid_network, tracktor['tracker'], tracktor['oracle'])
     else:
-        tracker = Tracker(obj_detect, reid_network, tracktor['tracker'])
+        tracker = Tracker(correlation_head, obj_detect, reid_network, tracktor['tracker'])
 
     time_total = 0
     num_frames = 0

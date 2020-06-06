@@ -7,6 +7,9 @@ tracktor:
   # frcnn or fpn
   network: fpn
 
+  # correlation head
+  correlation_weights: output/tracktor/correlation/correlation_head.model
+
   # frcnn
   # obj_detect_weights: output/frcnn/res101/mot_2017_train/180k/res101_faster_rcnn_iter_180000.pth
   # obj_detect_config: output/frcnn/res101/mot_2017_train/180k/sacred_config.yaml

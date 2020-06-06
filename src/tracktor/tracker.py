@@ -17,7 +17,8 @@ class Tracker:
 	# only track pedestrian
 	cl = 1
 
-	def __init__(self, obj_detect, reid_network, tracker_cfg):
+	def __init__(self, correlation_head, obj_detect, reid_network, tracker_cfg):
+		self.correlation_head = correlation_head
 		self.obj_detect = obj_detect
 		self.reid_network = reid_network
 		self.detection_person_thresh = tracker_cfg['detection_person_thresh']
@@ -81,10 +82,13 @@ class Tracker:
 
 	def regress_tracks(self, blob):
 		"""Regress the position of the tracks and also checks their scores."""
-		pos = self.get_pos()
+		prev_boxes = self.get_pos()
+		enlarged_boxes = clip_boxes_to_image(self.enlarge_boxes(prev_boxes), blob['img'].shape[-2:])
 
-		# regress the enlarged bounding boxes
-		enlarged_boxes = clip_boxes_to_image(self.enlarge_boxes(pos), blob['img'].shape[-2:])
+		prev_patches, current_patches = self.obj_detect.get_feature_patches(prev_boxes, enlarged_boxes, self.last_image)
+
+		correlated_boxes = self.correlation_head(prev_patches, current_patches)
+
 		boxes, scores = self.obj_detect.predict_boxes(enlarged_boxes)
 		pos = clip_boxes_to_image(boxes, blob['img'].shape[-2:])
 
