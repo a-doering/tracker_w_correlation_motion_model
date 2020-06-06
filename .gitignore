@@ -32,5 +32,7 @@ __pycache__
 # Google Drive
 drive_output
 
-# Git setup
+# Home files
 .gitconfig
+.cache
+.nv
