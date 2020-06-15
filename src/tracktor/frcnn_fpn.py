@@ -89,7 +89,7 @@ class FRCNN_FPN(FasterRCNN):
 
         preprocessed_images, _ = self.transform(images, None)
         self.preprocessed_images = preprocessed_images
-
+        
         self.features = self.backbone(preprocessed_images.tensors)
         if isinstance(self.features, torch.Tensor):
             self.features = OrderedDict([(0, self.features)])

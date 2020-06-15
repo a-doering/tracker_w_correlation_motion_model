@@ -85,11 +85,15 @@ class Tracker:
 		prev_boxes = self.get_pos()
 		enlarged_boxes = clip_boxes_to_image(self.enlarge_boxes(prev_boxes), blob['img'].shape[-2:])
 
+		#print(prev_boxes)
+		#print(enlarged_boxes)
+
 		prev_patches, current_patches = self.obj_detect.get_feature_patches(prev_boxes, enlarged_boxes, self.last_image)
 
 		correlated_boxes = self.correlation_head(prev_patches, current_patches)
+		correlated_boxes = clip_boxes_to_image(correlated_boxes, blob['img'].shape[-2:])
 
-		boxes, scores = self.obj_detect.predict_boxes(enlarged_boxes)
+		boxes, scores = self.obj_detect.predict_boxes(correlated_boxes)
 		pos = clip_boxes_to_image(boxes, blob['img'].shape[-2:])
 
 		s = []
@@ -259,19 +263,20 @@ class Tracker:
 					self.motion_step(t)
 
 	def enlarge_boxes(self, boxes):
+		big_boxes = boxes.clone()
 		"""Enlarges bounding box widht and height by some factor."""
 		if self.boxes_enlargement_factor > 1.0:
 			delta = (self.boxes_enlargement_factor - 1) / 2
 
-			width_delta = (boxes[:, 2] - boxes[:, 0]) * delta
-			height_delta = (boxes[:, 3] - boxes[:, 1]) * delta
+			width_delta = (big_boxes[:, 2] - big_boxes[:, 0]) * delta
+			height_delta = (big_boxes[:, 3] - big_boxes[:, 1]) * delta
 
-			boxes[:, 0] -= width_delta
-			boxes[:, 1] -= height_delta
-			boxes[:, 2] += width_delta
-			boxes[:, 3] += height_delta
+			big_boxes[:, 0] -= width_delta
+			big_boxes[:, 1] -= height_delta
+			big_boxes[:, 2] += width_delta
+			big_boxes[:, 3] += height_delta
 
-		return boxes
+		return big_boxes
 
 	def step(self, blob):
 		"""This function should be called every timestep to perform tracking with a blob
