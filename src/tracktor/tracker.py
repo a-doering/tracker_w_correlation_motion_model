@@ -84,16 +84,16 @@ class Tracker:
 		"""Regress the position of the tracks and also checks their scores."""
 		prev_boxes = self.get_pos()
 		enlarged_boxes = clip_boxes_to_image(self.enlarge_boxes(prev_boxes), blob['img'].shape[-2:])
+		positions = enlarged_boxes
 
-		#print(prev_boxes)
-		#print(enlarged_boxes)
+		if self.correlation_head:
+			prev_patches, current_patches = self.obj_detect.get_feature_patches(prev_boxes, enlarged_boxes, self.last_image)
 
-		prev_patches, current_patches = self.obj_detect.get_feature_patches(prev_boxes, enlarged_boxes, self.last_image)
+			correlated_boxes = self.correlation_head(prev_patches, current_patches)
+			correlated_boxes = clip_boxes_to_image(correlated_boxes, blob['img'].shape[-2:])
+			positions = correlated_boxes
 
-		correlated_boxes = self.correlation_head(prev_patches, current_patches)
-		correlated_boxes = clip_boxes_to_image(correlated_boxes, blob['img'].shape[-2:])
-
-		boxes, scores = self.obj_detect.predict_boxes(correlated_boxes)
+		boxes, scores = self.obj_detect.predict_boxes(positions)
 		pos = clip_boxes_to_image(boxes, blob['img'].shape[-2:])
 
 		s = []

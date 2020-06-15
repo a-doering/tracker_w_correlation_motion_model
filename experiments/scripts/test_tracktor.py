@@ -56,12 +56,14 @@ def main(tracktor, reid, _config, _log, _run):
 
     _log.info("Initializing object detector.")
 
-    # correlation head
-    correlation_head = CorrelationHead()
-    # correlation_head.load_state_dict(torch.load(_config['tracktor']['correlation_weights'],
-    #                             map_location=lambda storage, loc: storage))
-    correlation_head.eval()
-    correlation_head.cuda()
+    correlation_head = None
+    if tracktor['correlation_head']:
+        # correlation head
+        correlation_head = CorrelationHead()
+        # correlation_head.load_state_dict(torch.load(_config['tracktor']['correlation_weights'],
+        #                             map_location=lambda storage, loc: storage))
+        correlation_head.eval()
+        correlation_head.cuda()
 
     # object detection
     obj_detect = FRCNN_FPN(num_classes=2)
