@@ -16,10 +16,10 @@ class MOTcorrelationWrapper(Dataset):
 		train_folders = ['MOT17-02', 'MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10',
 				         'MOT17-11', 'MOT17-13']
 
-		self._dataloader = MOTreID(None, split=split, **dataloader)
+		self._dataloader = MOTcorrelation(None, split=split, **dataloader)
 
 		for seq in train_folders:
-			d = MOTreID(seq, split=split, **dataloader)
+			d = MOTcorrelation(seq, split=split, **dataloader)
 			for sample in d.data:
 				self._dataloader.data.append(sample)
 

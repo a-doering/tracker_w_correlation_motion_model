@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 from tracktor.config import get_output_dir, get_tb_dir
 from tracktor.correlation.solver import Solver
 from tracktor.datasets.factory import Datasets
+from tracktor.correlation.correlation_head import CorrelationHead
 
 ex = Experiment()
 ex.add_config('experiments/cfgs/correlation.yaml')
@@ -54,10 +55,8 @@ def my_main(_config, correlation):
     ##########################
     # Initialize the modules #
     ##########################
-    print("[*] Building CNN")
-
-    network = None #TODO select network here
-
+    print("[*] Building Correlation Head")
+    network = CorrelationHead()
     network.train()
     network.cuda()
 

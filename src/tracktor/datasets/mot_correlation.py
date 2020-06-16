@@ -11,13 +11,13 @@ from torchvision.ops.boxes import clip_boxes_to_image
 class MOTcorrelation(MOT17Sequence):
     """Multiple object tracking dataset.
     
-    This class builds samples for training a siamese net called correlation layer. 
+    This class builds samples for training a siamese net called correlation head. 
     It returns a pair of two patches that are cropped around the bounding box (bb) of frame t and 
     the enlarged bb of t in frame t+1 and also returns the bb ground truth in t+1. The crops can be precalculated.
     """
 
-    def __init__(self, seq_name, split, vis_treshold, boxes_enlargement_factor, frames_apart, image_shape):
-        super().__init__(seq_name, vis_treshold=vis_treshold)
+    def __init__(self, seq_name, split, vis_threshold, boxes_enlargement_factor, frames_apart, image_shape):
+        super().__init__(seq_name, vis_threshold=vis_threshold)
 
         self.boxes_enlargement_factor = boxes_enlargement_factor
         self.frames_apart = frames_apart
@@ -40,7 +40,7 @@ class MOTcorrelation(MOT17Sequence):
         pair = self.data[idx]
         return pair
 
-    def build_samples(self, boxes_enlargement_factor, frames_apart=1):
+    def build_samples(self):
         """Builds the samples for the correlation layer out of the sequence"""
         
         tracks = {}
@@ -67,7 +67,7 @@ class MOTcorrelation(MOT17Sequence):
                 
                 # Check if frames are not too far apart, e.g. not lost for several frames
                 if abs(int(osp.splitext(osp.basename(track[idx]['im_path']))) - 
-                    int(osp.splitext(osp.basename(track[idx+1]['im_path'])))) <= frames_apart:
+                    int(osp.splitext(osp.basename(track[idx+1]['im_path'])))) <= self.frames_apart:
 
                     pair = []
                     # Cropped to the bounding box size and to the enlarged bb size
