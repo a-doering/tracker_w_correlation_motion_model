@@ -35,7 +35,10 @@ class MOTcorrelation(MOT17Sequence):
             raise NotImplementedError("Split: {}".format(split))  
 
     def __getitem__(self, idx):
-        pass
+        """Returns the ith pair"""
+        #TODO check this when less asleep
+        pair = self.data[idx]
+        return pair
 
     def build_samples(self, boxes_enlargement_factor, frames_apart=1):
         """Builds the samples for the correlation layer out of the sequence"""
