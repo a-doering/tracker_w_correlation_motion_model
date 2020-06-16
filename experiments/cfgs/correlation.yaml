@@ -1,0 +1,26 @@
+correlation:
+  name: test
+  module_name: correlation
+  description:
+  seed: 12345
+  db_train: mot_correlation_small_train
+  db_val: False
+
+  solver:
+    optim:
+    optiom_args:
+      lr:
+      weight_decay:
+
+  dataloader:
+    # all targets with visibility lower than this are filtered out, for kitti set it to
+    # a sequence with maximal [truncation, occlusion] levels
+    vis_treshold: 0.3
+    # Enlargement of bounding boxes in all dimensions. 
+    # Will be truncated to not be out of image.
+    boxes_enlargement_factor: 1.2
+    # Number of frames apart for the pairs in case the next detection 
+    #is not in next frame. 1 means next frame
+    frames_apart: 1
+    #TODO check image shape, also move out of config
+    image_shape: (1920:1080)
