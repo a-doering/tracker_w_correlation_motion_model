@@ -6,6 +6,9 @@ correlation:
   db_train: mot_correlation_small_train
   db_val: False
 
+  load_from_rcnn: true
+  rcnn_weights: output/faster_rcnn_fpn_training_mot_17/model_epoch_27.model
+
   solver:
     optim:
     optiom_args:
