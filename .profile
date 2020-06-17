@@ -8,3 +8,4 @@ git config core.filemode false --replace-all
 
 alias l='ls -lrth'
 alias run_test='python ~/experiments/scripts/test_tracktor.py'
+alias run_train_correlation='python ~/experiments/scripts/train_correlation.py

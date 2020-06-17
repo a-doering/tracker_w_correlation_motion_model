@@ -23,4 +23,6 @@ correlation:
     #is not in next frame. 1 means next frame
     frames_apart: 1
     #TODO check image shape, also move out of config
-    image_shape: (1920:1080)
+    image_shape:
+     - 1080
+     - 1920

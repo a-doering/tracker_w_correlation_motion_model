@@ -60,21 +60,21 @@ class MOTcorrelation(MOT17Sequence):
         
         res = []
         # Loop through each track
-        for track in tracks:
+        for frame, track in tracks.items():
 
             # Loop through each frame
             for idx in range(len(track)-1):
                 
                 # Check if frames are not too far apart, e.g. not lost for several frames
-                if abs(int(osp.splitext(osp.basename(track[idx]['im_path']))) - 
-                    int(osp.splitext(osp.basename(track[idx+1]['im_path'])))) <= self.frames_apart:
+                if abs(int(osp.splitext(osp.basename(track[idx]['im_path']))[0]) - 
+                    int(osp.splitext(osp.basename(track[idx+1]['im_path']))[0])) <= self.frames_apart:
 
-                    pair = []
+                    pair = {}
                     # Cropped to the bounding box size and to the enlarged bb size
-                    pair[0] = self.build_crop(track[idx]['im_path'], track[idx]['im_path']['gt'])
-                    pair[1] = self.build_crop(track[idx+1]['im_path'], clip_boxes_to_image(self.enlarge_boxes(track[idx]['im_path']['gt']), self.image_shape))
+                    pair[0] = self.build_crop(track[idx]['im_path'], track[idx]['gt'])
+                    pair[1] = self.build_crop(track[idx+1]['im_path'], self.clip_boxes_to_image(self.enlarge_boxes(track[idx]['gt']), self.image_shape))
                     # Ground truth for idx+1
-                    pair[2] = track[idx+1]['im_path']['gt']
+                    pair[2] = track[idx+1]['gt']
                     res.append(np.array(pair))
                  
         if self._seq_name:
@@ -88,7 +88,7 @@ class MOTcorrelation(MOT17Sequence):
 
         # Assuming bb format  <bb_left>, <bb_top>, <bb_right>, <bb_bottom>
         # See mot_sequence.py  _sequence function for formatting
-        crop = im[bb[1]:bb[3], bb[0]:bb[2]]
+        crop = im[int(bb[1]):int(bb[3]), int(bb[0]):int(bb[2])]
 
         return crop
 
@@ -105,4 +105,13 @@ class MOTcorrelation(MOT17Sequence):
             bb[2] += width_delta
             bb[3] += height_delta
 
+        return bb
+
+    def clip_boxes_to_image(self, bb, size):
+        """Clips boxes to size"""
+        height, width = size
+        bb[0] = np.clip(bb[0], 0, width)
+        bb[1] = np.clip(bb[1], 0, height)
+        bb[2] = np.clip(bb[2], 0, width)
+        bb[3] = np.clip(bb[3], 0, height)
         return bb
