@@ -18,6 +18,10 @@ class FRCNN_FPN(FasterRCNN):
         self.preprocessed_images = None
         self.features = None
 
+        self.prev_original_image_sizes = None
+        self.prev_preprocessed_images = None
+        self.prev_features = None
+
     def detect(self, img):
         device = list(self.parameters())[0].device
         img = img.to(device)
@@ -63,20 +67,15 @@ class FRCNN_FPN(FasterRCNN):
         pred_scores = pred_scores[:, 1:].squeeze(dim=1).detach()
         return pred_boxes, pred_scores
 
-    def get_feature_patches(self, prev_boxes, current_boxes, last_image):
+    def get_feature_patches(self, prev_boxes, current_boxes):
         device = list(self.parameters())[0].device
         prev_boxes = prev_boxes.to(device)
         current_boxes = current_boxes.to(device)
-        last_image = last_image.to(device)
 
-        prev_image_size = last_image.shape[-2:]
-        prepocessed_prev_image, _ = self.transform(last_image.unsqueeze(0), None)
-        prev_features = self.backbone(prepocessed_prev_image.tensors)
-
-        prev_boxes = resize_boxes(prev_boxes, prev_image_size, prepocessed_prev_image.image_sizes[0])
+        prev_boxes = resize_boxes(prev_boxes, self.prev_original_image_sizes[0], self.prev_preprocessed_images.image_sizes[0])
         current_boxes = resize_boxes(current_boxes, self.original_image_sizes[0], self.preprocessed_images.image_sizes[0])
 
-        prev_boxes_features = self.roi_heads.box_roi_pool(prev_features, [prev_boxes], prepocessed_prev_image.image_sizes)
+        prev_boxes_features = self.roi_heads.box_roi_pool(self.prev_features, [prev_boxes], self.prev_preprocessed_images.image_sizes)
         current_boxes_features = self.roi_heads.box_roi_pool(self.features, [current_boxes], self.preprocessed_images.image_sizes)
 
         return prev_boxes_features, current_boxes_features
@@ -85,6 +84,12 @@ class FRCNN_FPN(FasterRCNN):
         device = list(self.parameters())[0].device
         images = images.to(device)
 
+        # saving last image
+        self.prev_original_image_sizes = self.original_image_sizes
+        self.prev_preprocessed_images = self.preprocessed_images
+        self.prev_features = self.features
+
+        # getting new feature map
         self.original_image_sizes = [img.shape[-2:] for img in images]
 
         preprocessed_images, _ = self.transform(images, None)

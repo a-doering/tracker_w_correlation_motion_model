@@ -88,7 +88,7 @@ class Tracker:
 		positions = enlarged_boxes
 
 		if self.use_correlation:
-			prev_patches, current_patches = self.obj_detect.get_feature_patches(prev_boxes, enlarged_boxes, self.last_image)
+			prev_patches, current_patches = self.obj_detect.get_feature_patches(prev_boxes, enlarged_boxes)
 
 			correlated_boxes = self.correlation_head(prev_patches, current_patches)
 			correlated_boxes = clip_boxes_to_image(correlated_boxes, blob['img'].shape[-2:])
