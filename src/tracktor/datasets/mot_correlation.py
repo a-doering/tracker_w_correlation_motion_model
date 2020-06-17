@@ -36,9 +36,18 @@ class MOTcorrelation(MOT17Sequence):
 
     def __getitem__(self, idx):
         """Returns the ith pair"""
-        #TODO check this when less asleep
         pair = self.data[idx]
-        return pair
+
+        # concatenate the patches
+        r = []
+        r.append(pair[0])
+        r.append(pair[1])
+        patches = torch.stack(r,0)
+
+        labels = np.array(pair[2])
+
+        batch = [patches, labels]
+        return batch
 
     def build_samples(self):
         """Builds the samples for the correlation layer out of the sequence"""
