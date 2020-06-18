@@ -57,6 +57,8 @@ def my_main(_config, correlation):
     ##########################
     print("[*] Building Correlation Head")
     network = CorrelationHead()
+    if correlation['load_from_rcnn']:
+        network.load_from_rcnn(correlation['rcnn_weights'])
     network.train()
     network.cuda()
 
