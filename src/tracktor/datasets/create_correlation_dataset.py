@@ -1,9 +1,12 @@
+from ..config import cfg
 import torch
 from tracktor.frcnn_fpn import FRCNN_FPN
+from torchvision.transforms import ToTensor
 
 import configparser
-from ..config import cfg
 import h5py 
+import os.path as osp
+from PIL import Image
 
 
 # Load model
@@ -19,12 +22,19 @@ mot_dir = osp.join(cfg.DATA_DIR, 'MOT17Det', 'train')
 sequences = ['MOT17-02', 'MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10',
 				         'MOT17-11', 'MOT17-13']
 
+# Open hdf5 file and create arrays
+h5_path = osp.join(cfg.DATA_DIR, 'correlation_dataset', 'correlation_dataset.hdf5')
+h5 = h5py.File(h5_file, mode='w')
+
+h5_dataset_1 = h5.create_dataset("fmap", maxshape=(None, 256, 7,7))
+h5_dataset_2 = h5.create_dataset("fmap_enlarged", maxshape=(None, 256, 7,7))
+h5_dataset_3 = h5.create_dataset("labels",maxshape=(None, 4))
+h5_dataset_4 = h5.create_dataset("name", maxshape=(None,))
+
+
 for seq in sequences:
     seq_im_dir = osp.join(mot_dir, seq, 'img1')
     gt_file = osp.join(mot_dir, seq, 'gt', 'gt.txt')
-
-
-
     config_file = osp.join(mot_dir, seq, 'seqinfo.ini')
 
     assert osp.exists(config_file), \
@@ -62,42 +72,45 @@ for seq in sequences:
     else:
         no_gt = True
 
+    id_in_frame = {}
+
     for i in range(1,seqLength+1):
         im_path = osp.join(imDir,"{:06d}.jpg".format(i))
-
+        id_in_frame[i] = boxes[i].keys()
         sample = {'gt':boxes[i],
                     'im_path':im_path,
                     'vis':visibility[i]}
 
         total.append(sample)
 
-    
-
     # Find all ids that are in this frame and next
-    
+    id_in_frame_and_next = {}
+    for i in range(1, seqLength):
+        id_in_frame_and_next[i] = set(id_in_frame[i]).intersection(id_in_frame[i+1])
 
-    # Get for each id the bb of this and of the next frame
-    # {id: []}
+    # Create feature maps
+    for i in range(1, seqLength):
+        boxes = [total[i][id] for id in id_in_frame_and_next[i]] # bounding boxes of the previous frame
+        enlarged_boxes = [total[i+1][id] for id in id_in_frame_and_next[i]]# enlarged bounding boxes of the previous frame
 
+        boxes = torch.tensor(boxes)
+        enlarged_boxes = torch.tensor(enlarged_boxes)
 
+        img = Image.open(total[i]['im_path']).convert("RGB")
+        img = ToTensor(img)
 
-# Save as:
-# Sequence Name _ frame (of first image) _ ID, e.g.
-# MOT17-02_000001_0055
+        # Load_image computes the feature map of the given image
+        # Every time you load an image, the last one is stored as previous
+        obj_detect.load_image(img) # load previous frame
+        img = Image.open(total[i+1]['im_path']).convert("RGB")
+        img = ToTensor(img)
+        obj_detect.load_image(img) # load current frame
 
+        prev_7x7_features, current_7x7_features = obj_detect.get_feature_patches(boxes, enlarged_boxes)
+    # _7x7_features.shape -> [#boxes, 256, 7, 7]
 
+    # Store the outputs with ground truth
+    # Save as:
+    # Sequence Name _ frame (of first image) _ ID, e.g.
+    # MOT17-02_000001_0055
 
-
-
-# Load_image computes the feature map of the given image
-# Every time you load an image, the last one is stored as previous
-obj_detect.load_image(blob['img']) # load previous frame
-obj_detect.load_image(blob['img']) # load current frame
-
-boxes = # bounding boxes of the previous frame
-enlarged_boxes = # enlarged bounding boxes of the previous frame
-
-prev_7x7_features, current_7x7_features = obj_detect.get_feature_patches(boxes, enlarged_boxes)
-# _7x7_features.shape -> [#boxes, 256, 7, 7]
-
-# Store the outputs with ground truth
