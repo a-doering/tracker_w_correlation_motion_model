@@ -7,11 +7,13 @@ import cv2
 
 import torch
 from torch.utils.data import DataLoader
+from tracktor.config import cfg
 
 from tracktor.config import get_output_dir, get_tb_dir
 from tracktor.correlation.solver import Solver
-from tracktor.datasets.factory import Datasets
+#from tracktor.datasets.factory import Datasets
 from tracktor.correlation.correlation_head import CorrelationHead
+from dataloader_correlation import Dataset
 
 ex = Experiment()
 ex.add_config('experiments/cfgs/correlation.yaml')
@@ -43,8 +45,10 @@ def my_main(_config, correlation):
     #########################
     print("[*] Initializing Dataloader")
 
-    db_train = Datasets(correlation['db_train'], correlation['dataloader'])
-    db_train = DataLoader(db_train, batch_size=1, shuffle=True)
+    #db_train = Datasets(correlation['db_train'], correlation['dataloader'])
+    h5_file = osp.join(cfg.DATA_DIR, 'correlation_dataset', 'correlation_dataset.hdf5')
+    db_train = Dataset(h5_file)
+    db_train = DataLoader(db_train, batch_size=1, shuffle=False)
 
     if correlation['db_val']:
         db_val = None
