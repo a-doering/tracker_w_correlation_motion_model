@@ -48,7 +48,7 @@ def my_main(_config, correlation):
     #db_train = Datasets(correlation['db_train'], correlation['dataloader'])
     h5_file = osp.join(cfg.DATA_DIR, 'correlation_dataset', 'correlation_dataset.hdf5')
     db_train = Dataset(h5_file)
-    db_train = DataLoader(db_train, batch_size=1, shuffle=False)
+    db_train = DataLoader(db_train, batch_size=8, shuffle=True)
 
     if correlation['db_val']:
         db_val = None

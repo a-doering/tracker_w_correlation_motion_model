@@ -50,7 +50,7 @@ class Solver(object):
 		"""
 		Resets train and val histories for the accuracy and the loss.
 		"""
-		self._losses = {}
+		self._losses = []
 		self._val_losses = {}
 
 	def snapshot(self, model, iter):
@@ -133,17 +133,13 @@ class Solver(object):
 
 			for i, batch in enumerate(train_loader, 1):
 				#inputs, labels = Variable(batch[0]), Variable(batch[1])
-				
 
 				optim.zero_grad()
-				losses = model.sum_losses(batch, **model_args)
-				losses['total_loss'].backward()
+				loss = model.losses(batch, **model_args)
+				loss.backward()
 				optim.step()
 
-				for k,v in losses.items():
-					if k not in self._losses.keys():
-						self._losses[k] = []
-					self._losses[k].append(v.data.cpu().numpy())
+				self._losses.append(loss.data.cpu().numpy())
 
 				if log_nth and i % log_nth == 0:
 					next_now = time.time()
@@ -151,11 +147,10 @@ class Solver(object):
 																  iter_per_epoch * num_epochs, (next_now-now)/log_nth))
 					now = next_now
 
-					for k,v in self._losses.items():
-						last_log_nth_losses = self._losses[k][-log_nth:]
-						train_loss = np.mean(last_log_nth_losses)
-						print('%s: %.3f' % (k, train_loss))
-						self.writer.add_scalar(k, train_loss, i + epoch * iter_per_epoch)
+					last_log_nth_losses = self._losses[-log_nth:]
+					train_loss = np.mean(last_log_nth_losses)
+					print('%s: %.3f' % ("total_loss", train_loss))
+					self.writer.add_scalar("total_loss", train_loss, i + epoch * iter_per_epoch)
 						
 	
 			# VALIDATION

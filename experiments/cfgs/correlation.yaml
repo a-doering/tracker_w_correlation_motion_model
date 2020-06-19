@@ -9,11 +9,15 @@ correlation:
   load_from_rcnn: true
   rcnn_weights: output/faster_rcnn_fpn_training_mot_17/model_epoch_27.model
 
+  model_args:
+    # Recommended for loss: GIoU
+    loss: GIoU
+
   solver:
-    optim:
-    optiom_args:
-      lr:
-      weight_decay:
+    optim: Adam
+    optim_args:
+      lr: 0.0003
+      weight_decay: 0.0000
 
   dataloader:
     # all targets with visibility lower than this are filtered out, for kitti set it to
