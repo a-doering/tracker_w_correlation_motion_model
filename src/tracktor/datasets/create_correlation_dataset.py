@@ -139,11 +139,10 @@ for seq in sequences:
         print('####### Frame {:04} from sequence {} #######'.format(i, seq))
         print(id_in_frame_and_next[i])
         pairs_in_frame= len(id_in_frame_and_next[i])
-        
-        # Nothing to do here, prevent error
+
+        # Skip in these cases, prevent error
         if pairs_in_frame == 0:
             continue
-        #print(pairs_in_frame)
         boxes = [total[i]['gt'][id] for id in id_in_frame_and_next[i]] # bounding boxes of the previous frame
         boxes_next = [total[i+1]['gt'][id] for id in id_in_frame_and_next[i]]
         enlarged_boxes = [clip_boxes_to_image(enlarge_boxes(total[i]['gt'][id], boxes_enlargement_factor), (imHeight, imWidth))  for id in id_in_frame_and_next[i]]# enlarged bounding boxes of the previous frame
@@ -154,19 +153,16 @@ for seq in sequences:
         boxes = torch.tensor(boxes)
         enlarged_boxes = torch.tensor(enlarged_boxes)
 
-        img = Image.open(osp.join(seq_im_dir, total[i]['im_path'])).convert("RGB")
-        img = np.array(img,dtype=np.float32)
-        img = img.transpose((2,0,1))
-        img = torch.from_numpy(img)#1080,1920,3
+        # Load and convert image
+        pic = Image.open(osp.join(seq_im_dir, total[i]['im_path'])).convert("RGB")
+        img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
+        img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
+        # Put it from HWC to CHW format
+        img = img.permute((2, 0, 1)).contiguous()
+        img = img.float().div(255)
         img.unsqueeze_(0)
-        print(img.shape, img.type, img.type())#1,3,1080,1920 ---> yes, torch object
+        print(img.shape, img.type, img.type())#1,3,1080,1920 ---> yes, torch object        
         obj_detect.load_image(img) # load previous frame
-
-        img = Image.open(osp.join(seq_im_dir, total[i+1]['im_path'])).convert("RGB")
-        img = np.array(img,dtype=np.float32)
-        img = img.transpose((2,0,1))
-        img = torch.from_numpy(img)
-        img.unsqueeze_(0)
         obj_detect.load_image(img) # load current frame
 
         prev_7x7_features, current_7x7_features = obj_detect.get_feature_patches(boxes, enlarged_boxes)
@@ -186,3 +182,4 @@ for seq in sequences:
     # if seq == 'MOT17-02':
     #     break
 h5.close()
+print("Finished creating dataset")
