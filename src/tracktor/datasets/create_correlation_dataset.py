@@ -36,21 +36,24 @@ def clip_boxes_to_image(bb, size):
     return bb
 
 # Load model
+print('Loading model...')
 obj_detect = FRCNN_FPN(num_classes=2)
 obj_detect.load_state_dict(torch.load("output/faster_rcnn_fpn_training_mot_17/model_epoch_27.model",
                             map_location=lambda storage, loc: storage))
 obj_detect.eval()
 obj_detect.cuda()
+print('Model loaded!')
 
 # Hardcoded loader for MOT17
 mot_dir = osp.join(cfg.DATA_DIR, 'MOT17Det', 'train')
-
 sequences = ['MOT17-02', 'MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-11', 'MOT17-13']
 
 # Open hdf5 file and create arrays
+print(100*'#')
 h5_file = osp.join(cfg.DATA_DIR, 'correlation_dataset', 'correlation_dataset.hdf5')
-h5 = h5py.File(h5_file, mode='w')
+print(h5_file)
 
+h5 = h5py.File(h5_file, mode='w')
 for seq in sequences:
     seq_im_dir = osp.join(mot_dir, seq)
     gt_file = osp.join(mot_dir, seq, 'gt', 'gt.txt')
@@ -136,6 +139,10 @@ for seq in sequences:
         print('####### Frame {:04} from sequence {} #######'.format(i, seq))
         print(id_in_frame_and_next[i])
         pairs_in_frame= len(id_in_frame_and_next[i])
+        
+        # Nothing to do here, prevent error
+        if pairs_in_frame == 0:
+            continue
         #print(pairs_in_frame)
         boxes = [total[i]['gt'][id] for id in id_in_frame_and_next[i]] # bounding boxes of the previous frame
         boxes_next = [total[i+1]['gt'][id] for id in id_in_frame_and_next[i]]
