@@ -46,7 +46,7 @@ def my_main(_config, correlation):
     print("[*] Initializing Dataloader")
 
     #db_train = Datasets(correlation['db_train'], correlation['dataloader'])
-    h5_file = osp.join(cfg.DATA_DIR, 'correlation_dataset','correlation_dataset_seq_02.hdf5') #'correlation_dataset.hdf5')
+    h5_file = osp.join(cfg.DATA_DIR, 'correlation_dataset','correlation_dataset_1.20_0.50.hdf5')
     db_train = Dataset(h5_file)
     db_train = DataLoader(db_train, batch_size=32, shuffle=True)
 

@@ -34,7 +34,7 @@ def clip_boxes_to_image(bb, size):
     return bb
 
 def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, verbose=False):
-
+    """Create a dataset for the correlation layer"""
     # Open hdf5 file and create arrays
     print(100*'#')
     filename = 'correlation_dataset_{:.2f}_{:.2f}.hdf5'.format(boxes_enlargement_factor, vis_threshold)
@@ -120,7 +120,7 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, verbose=F
         # Create feature maps
         for i in range(1, seqLength):
             if i%100 == 0:
-                print("{:04} frames done in this sequence").format(i)
+                print("{:04} frames done in this sequence".format(i))
             if verbose:
                 print('####### Frame {:04} from sequence {} #######'.format(i, seq))
                 print(id_in_frame_and_next[i])
@@ -189,7 +189,7 @@ sequences = ['MOT17-02', 'MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-
 
 # Hardcoded parameters
 vis_threshold = [0.5]
-boxes_enlargement_factor = [1.05, 1.1, 1.2,1.3,1.5]
+boxes_enlargement_factor = [1.3,1.5]#[1.05, 1.1, 1.2,1.3,1.5]
 
 for b in boxes_enlargement_factor:
     for v in vis_threshold:

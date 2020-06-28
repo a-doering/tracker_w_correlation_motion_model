@@ -22,7 +22,7 @@ correlation:
   dataloader:
     # all targets with visibility lower than this are filtered out, for kitti set it to
     # a sequence with maximal [truncation, occlusion] levels
-    vis_threshold: 0.3
+    vis_threshold: 0.5
     # Enlargement of bounding boxes in all dimensions. 
     # Will be truncated to not be out of image.
     boxes_enlargement_factor: 1.2
