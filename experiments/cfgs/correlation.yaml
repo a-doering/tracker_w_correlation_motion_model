@@ -11,7 +11,7 @@ correlation:
 
   model_args:
     # Recommended for loss: GIoU
-    loss: GIoU
+    loss: MSE
 
   solver:
     optim: Adam

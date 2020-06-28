@@ -46,9 +46,9 @@ def my_main(_config, correlation):
     print("[*] Initializing Dataloader")
 
     #db_train = Datasets(correlation['db_train'], correlation['dataloader'])
-    h5_file = osp.join(cfg.DATA_DIR, 'correlation_dataset','correlation_dataset_1.20_0.50.hdf5')
+    h5_file = osp.join(cfg.DATA_DIR, 'correlation_dataset','correlation_dataset_1.50_0.50.hdf5')
     db_train = Dataset(h5_file)
-    db_train = DataLoader(db_train, batch_size=32, shuffle=True)
+    db_train = DataLoader(db_train, batch_size=64, shuffle=True)
 
     if correlation['db_val']:
         db_val = None
@@ -79,6 +79,6 @@ def my_main(_config, correlation):
                                                                 iters_per_epoch,  iters_per_epoch))
     #else:
     #   l = None
-    max_epochs = 25000 // len(db_train.dataset) + 1 if 25000 % len(db_train.dataset) else 25000 // len(db_train.dataset)
+    max_epochs = 100
     solver = Solver(output_dir, tb_dir, lr_scheduler_lambda=l)
     solver.train(network, db_train, db_val, max_epochs, 100, model_args=correlation['model_args'])

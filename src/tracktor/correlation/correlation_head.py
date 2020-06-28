@@ -62,6 +62,8 @@ class CorrelationHead(nn.Module):
 
         if loss == "GIoU":
             total_loss = self.giou_loss(pred_boxes, gt_boxes)
+        elif loss == "MSE":
+            total_loss = F.mse_loss(pred_boxes, gt_boxes)
         else:
             raise NotImplementedError("Loss: {}".format(loss))
 
