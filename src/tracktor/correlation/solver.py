@@ -3,12 +3,17 @@ import numpy as np
 import os
 import time
 import fnmatch
+from tqdm import tqdm
 
 import torch
+from torch.utils.data import DataLoader
 from torch.autograd import Variable
 from torch.optim.lr_scheduler import LambdaLR
 
-from ..utils import plot_tracks
+from tracktor.utils import plot_tracks, get_mot_accum, get_overall_results
+from tracktor.frcnn_fpn import FRCNN_FPN
+from tracktor.tracker import Tracker
+from tracktor.reid.resnet import resnet50
 
 import tensorboardX as tb
 
@@ -44,6 +49,7 @@ class Solver(object):
 		if not os.path.exists(self.tb_val_dir):
 			os.makedirs(self.tb_val_dir)
 
+		self.tracker = None
 		self._reset_histories()
 
 	def _reset_histories(self):
@@ -52,6 +58,34 @@ class Solver(object):
 		"""
 		self._losses = []
 		self._val_losses = {}
+
+	def initialize_tracktor(self, model):
+		print("Initializing tracktor...")
+		from sacred import Experiment
+		ex = Experiment()
+		ex.add_config('experiments/cfgs/tracktor.yaml')
+		ex.add_config(ex.configurations[0]._conf['tracktor']['reid_config'])
+		tracktor = ex.configurations[0]._conf['tracktor']
+		reid = ex.configurations[1]._conf['reid']
+
+		# object detection
+		obj_detect = FRCNN_FPN(num_classes=2)
+		obj_detect.load_state_dict(torch.load(tracktor['obj_detect_model'],
+								map_location=lambda storage, loc: storage))
+		obj_detect.eval()
+		obj_detect.cuda()
+		
+		# correlation head
+		correlation_head = model
+		
+		# reid
+		reid_network = resnet50(pretrained=False, **reid['cnn'])
+		reid_network.load_state_dict(torch.load(tracktor['reid_weights'],
+									map_location=lambda storage, loc: storage))
+		reid_network.eval()
+		reid_network.cuda()
+
+		self.tracker = Tracker(obj_detect, correlation_head, reid_network, tracktor['tracker'])
 
 	def snapshot(self, model, iter):
 		filename = model.name + '_iter_{:d}'.format(iter) + '.pth'
@@ -150,29 +184,37 @@ class Solver(object):
 					last_log_nth_losses = self._losses[-log_nth:]
 					train_loss = np.mean(last_log_nth_losses)
 					print('%s: %.3f' % ("total_loss", train_loss))
-					self.writer.add_scalar("total_loss", train_loss, i + epoch * iter_per_epoch)
+					self.writer.add_scalar("train/total_loss", train_loss, i + epoch * iter_per_epoch)
 						
 	
 			# VALIDATION
 			if val_loader and log_nth:
+				print("Validating...")
+				if not self.tracker: self.initialize_tracktor(model)
 				model.eval()
-				for i, batch in enumerate(val_loader):
+				mot_accums = []
+				for seq in val_loader:
+					print(seq)
+					self.tracker.reset()
+					data_loader = DataLoader(seq, batch_size=1, shuffle=True)
+					for i, frame in enumerate(tqdm(data_loader)):
+						#if i > len(seq) * 0.05: break
+						with torch.no_grad():
+							self.tracker.step(frame)
+					mot_accums.append(get_mot_accum(self.tracker.get_results(), seq))
+				results = get_overall_results(mot_accums)
 
-					losses = model.sum_losses(batch, **model_args)
-
-					for k,v in losses.items():
-						if k not in self._val_losses.keys():
-							self._val_losses[k] = []
-						self._val_losses[k].append(v.data.cpu().numpy())
-
-					if i >= log_nth:
-						break
+				for k, v in results.items():
+					if k not in self._val_losses.keys():
+						self._val_losses[k] = []
+					self._val_losses[k].append(v[-1])
 					
 				model.train()
-				for k,v in self._losses.items():
+				for k,v in self._val_losses.items():
 					last_log_nth_losses = self._val_losses[k][-log_nth:]
 					val_loss = np.mean(last_log_nth_losses)
-					self.val_writer.add_scalar(k, val_loss, (epoch+1) * iter_per_epoch)
+					if k in ['mota', 'idf1']: print('%s: %.3f' % (k, val_loss))
+					self.writer.add_scalar("val/"+k, val_loss, (epoch+1) * iter_per_epoch)
 
 				#blobs_val = data_layer_val.forward()
 				#tracks_val = model.val_predict(blobs_val)

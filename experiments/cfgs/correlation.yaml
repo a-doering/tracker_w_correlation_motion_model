@@ -4,7 +4,7 @@ correlation:
   description:
   seed: 12345
   db_train: mot_correlation_small_train
-  db_val: False
+  db_val: mot17_09_FRCNN17
 
   load_from_rcnn: true
   rcnn_weights: output/faster_rcnn_fpn_training_mot_17/model_epoch_27.model

@@ -11,7 +11,7 @@ from tracktor.config import cfg
 
 from tracktor.config import get_output_dir, get_tb_dir
 from tracktor.correlation.solver import Solver
-#from tracktor.datasets.factory import Datasets
+from tracktor.datasets.factory import Datasets
 from tracktor.correlation.correlation_head import CorrelationHead
 from dataloader_correlation import Dataset
 
@@ -51,8 +51,7 @@ def my_main(_config, correlation):
     db_train = DataLoader(db_train, batch_size=64, shuffle=True)
 
     if correlation['db_val']:
-        db_val = None
-        #db_val = DataLoader(db_val, batch_size=1, shuffle=True)
+        db_val = Datasets(correlation['db_val'])
     else:
         db_val = None
 
