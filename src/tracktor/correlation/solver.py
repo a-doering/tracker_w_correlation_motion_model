@@ -122,7 +122,7 @@ class Solver(object):
 		"""
 
 		self.writer = tb.SummaryWriter(self.tb_dir)
-		self.val_writer = tb.SummaryWriter(self.tb_val_dir)
+		#self.val_writer = tb.SummaryWriter(self.tb_val_dir)
 
 		# filter out frcnn if this is added to the module
 		parameters = [param for name, param in model.named_parameters() if 'frcnn' not in name]
@@ -226,7 +226,7 @@ class Solver(object):
 			self._reset_histories()
 
 		self.writer.close()
-		self.val_writer.close()
+		#self.val_writer.close()
 
 		############################################################################
 		#                             END OF YOUR CODE                             #
