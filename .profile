@@ -14,4 +14,4 @@ alias train_correlation='python ~/tracker_w_correlation_motion_model/experiments
 alias gst='git status -sb'
 alias clean='rm -rf .cache/ .nv/'
 alias install_venv='pip install -r requirements.txt && pip install spatial-correlation-sampler && pip install -e .'
-alias clean_training='rm -rf output/tracktor/correlation/ tensorboard/tracker/'
+alias clean_training='rm -rf output/tracktor/correlation/; rm -rf tensorboard/tracker/'
