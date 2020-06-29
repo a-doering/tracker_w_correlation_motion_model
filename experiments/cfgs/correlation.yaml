@@ -4,7 +4,7 @@ correlation:
   description:
   seed: 12345
   db_train: correlation_dataset_1.50_0.50.hdf5
-  db_val: mot17_09_FRCNN17
+  db_val: False #mot17_09_FRCNN17
 
   load_from_rcnn: true
   rcnn_weights: output/faster_rcnn_fpn_training_mot_17/model_epoch_27.model
@@ -16,7 +16,7 @@ correlation:
   solver:
     optim: Adam
     optim_args:
-      lr: 0.0003
+      lr: 0.001
       weight_decay: 0.0000
 
   dataloader:

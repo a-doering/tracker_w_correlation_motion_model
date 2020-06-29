@@ -4,9 +4,9 @@ import numpy as np
 
 class Dataset(torch.utils.data.Dataset):
 
-    def __init__(self, h5_path):
+    def __init__(self, h5_path, sequences=['MOT17-02', 'MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10','MOT17-11', 'MOT17-13']):
 
-        self.train_folders = ['MOT17-02', 'MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10','MOT17-11', 'MOT17-13']
+        self.train_folders = sequences
         self.file = h5py.File(h5_path, "r")
         
         self.lengths = []
