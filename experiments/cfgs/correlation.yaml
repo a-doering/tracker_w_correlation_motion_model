@@ -3,7 +3,7 @@ correlation:
   module_name: correlation
   description:
   seed: 12345
-  db_train: mot_correlation_small_train
+  db_train: correlation_dataset_1.50_0.50.hdf5
   db_val: mot17_09_FRCNN17
 
   load_from_rcnn: true
