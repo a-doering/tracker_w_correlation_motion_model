@@ -65,8 +65,8 @@ def main(tracktor, reid, _config, _log, _run):
 
     # correlation head
     correlation_head = CorrelationHead()
-    # correlation_head.load_state_dict(torch.load(_config['tracktor']['correlation_weights'],
-    #                             map_location=lambda storage, loc: storage))
+    correlation_head.load_state_dict(torch.load(_config['tracktor']['correlation_weights'],
+                                 map_location=lambda storage, loc: storage))
     correlation_head.eval()
     correlation_head.cuda()
 

@@ -188,7 +188,7 @@ class Solver(object):
 						
 	
 			# VALIDATION
-			if val_loader and log_nth:
+			if val_loader and log_nth and epoch % 5 == 0:
 				print("Validating...")
 				if not self.tracker: self.initialize_tracktor(model)
 				model.eval()
