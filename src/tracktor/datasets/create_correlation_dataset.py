@@ -111,10 +111,13 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, verbose=F
         # Create a group per sequence. 
         # This allows fixed size shape for the datasets of size sum()
         group = h5.create_group(seq)
-        h5_dataset_1 = group.create_dataset("fmap", (num_pairs, 256, 7,7), dtype=np.float32)
+        h5_dataset_1 = group.create_dataset("fmap_prev", (num_pairs, 256, 7,7), dtype=np.float32)
         h5_dataset_2 = group.create_dataset("fmap_enlarged", (num_pairs, 256, 7,7), dtype=np.float32)
-        h5_dataset_3 = group.create_dataset("labels",(num_pairs, 4), dtype=np.float32)
-        h5_dataset_4 = group.create_dataset("names",(num_pairs,),dtype=h5py.special_dtype(vlen=str))
+        h5_dataset_3 = group.create_dataset("boxes_next",(num_pairs, 4), dtype=np.float32)
+        h5_dataset_4 = group.create_dataset("boxes",(num_pairs, 4), dtype=np.float32)
+        h5_dataset_5 = group.create_dataset("boxes_enlarged",(num_pairs, 4), dtype=np.float32)
+        h5_dataset_6 = group.create_dataset("names",(num_pairs,),dtype=h5py.special_dtype(vlen=str))
+        h5_dataset_7 = group.create_dataset("names_next",(num_pairs,),dtype=h5py.special_dtype(vlen=str))
 
         pairs_stored = 0
         # Create feature maps
@@ -136,6 +139,12 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, verbose=F
             # MOT17-02_000001_000001
             names = [seq + '_{:06}_'.format(i) + '{:06}'.format(id) for id in id_in_frame_and_next[i]]
             
+            h5_dataset_3[pairs_stored:pairs_stored+pairs_in_frame] = boxes_next
+            h5_dataset_4[pairs_stored:pairs_stored+pairs_in_frame] = boxes
+            h5_dataset_5[pairs_stored:pairs_stored+pairs_in_frame] = enlarged_boxes
+            h5_dataset_6[pairs_stored:pairs_stored+pairs_in_frame] = names
+            h5_dataset_7[pairs_stored:pairs_stored+pairs_in_frame] = names_next           
+
             boxes = torch.tensor(boxes)
             enlarged_boxes = torch.tensor(enlarged_boxes)
 
@@ -158,8 +167,7 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, verbose=F
 
             h5_dataset_1[pairs_stored:pairs_stored+pairs_in_frame] = prev_7x7_features.data.cpu().numpy()
             h5_dataset_2[pairs_stored:pairs_stored+pairs_in_frame] = current_7x7_features.data.cpu().numpy()
-            h5_dataset_3[pairs_stored:pairs_stored+pairs_in_frame] = boxes_next
-            h5_dataset_4[pairs_stored:pairs_stored+pairs_in_frame] = names
+
 
             pairs_stored += pairs_in_frame
             if verbose:
@@ -189,7 +197,7 @@ sequences = ['MOT17-02', 'MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-
 
 # Hardcoded parameters
 vis_threshold = [0.5]
-boxes_enlargement_factor = [1.3,1.5]#[1.05, 1.1, 1.2,1.3,1.5]
+boxes_enlargement_factor = [2.0,3.0]#[1.05, 1.1, 1.2,1.3,1.5]
 
 for b in boxes_enlargement_factor:
     for v in vis_threshold:
