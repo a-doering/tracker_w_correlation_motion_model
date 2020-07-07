@@ -38,7 +38,7 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, verbose=F
     # Open hdf5 file and create arrays
     print(100*'#')
     filename = 'correlation_dataset_{:.2f}_{:.2f}.hdf5'.format(boxes_enlargement_factor, vis_threshold)
-    h5_file = osp.join(cfg.DATA_DIR, 'correlation_dataset', filename)
+    h5_file = osp.join(cfg.DATA_DIR, 'correlation_dataset', 'dataset_more_info', filename)
     print(h5_file)
 
     h5 = h5py.File(h5_file, mode='w')
@@ -138,7 +138,8 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, verbose=F
             # Sequence Name _ frame (of first image) _ id
             # MOT17-02_000001_000001
             names = [seq + '_{:06}_'.format(i) + '{:06}'.format(id) for id in id_in_frame_and_next[i]]
-            
+            names_next = [seq + '_{:06}_'.format(i) + '{:06}'.format(id+1) for id in id_in_frame_and_next[i]]
+
             h5_dataset_3[pairs_stored:pairs_stored+pairs_in_frame] = boxes_next
             h5_dataset_4[pairs_stored:pairs_stored+pairs_in_frame] = boxes
             h5_dataset_5[pairs_stored:pairs_stored+pairs_in_frame] = enlarged_boxes
@@ -197,7 +198,7 @@ sequences = ['MOT17-02', 'MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-
 
 # Hardcoded parameters
 vis_threshold = [0.5]
-boxes_enlargement_factor = [2.0,3.0]#[1.05, 1.1, 1.2,1.3,1.5]
+boxes_enlargement_factor = [1.3,2.0,1.1,1.05,3.0]#[1.05, 1.1, 1.2,1.3,1.5]
 
 for b in boxes_enlargement_factor:
     for v in vis_threshold:
