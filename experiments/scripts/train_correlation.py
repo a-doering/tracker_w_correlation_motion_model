@@ -47,8 +47,8 @@ def my_main(_config, correlation):
 
     #db_train = Datasets(correlation['db_train'], correlation['dataloader'])
     h5_file = osp.join(cfg.DATA_DIR, 'correlation_dataset', correlation['db_train'])
-    db_train = Dataset(h5_file, ['MOT17-13'])
-    db_train = DataLoader(db_train, batch_size=64, shuffle=True)
+    db_train = Dataset(h5_file, ['MOT17-10'])
+    db_train = DataLoader(db_train, batch_size=512, shuffle=True)
 
     if correlation['db_val']:
         db_val = Datasets(correlation['db_val'])
@@ -76,4 +76,4 @@ def my_main(_config, correlation):
     # we want to keep lr until iter 15000 and from there to iter 25000 a exponential decay
     l = eval(f"lambda epoch: 1 if epoch < 200 else 0.001**((epoch - 200)/({max_epochs}-200))")
     solver = Solver(output_dir, tb_dir, lr_scheduler_lambda=l)
-    solver.train(network, db_train, db_val, max_epochs, 100, model_args=correlation['model_args'])
+    solver.train(network, db_train, db_val, max_epochs, 10, model_args=correlation['model_args'])

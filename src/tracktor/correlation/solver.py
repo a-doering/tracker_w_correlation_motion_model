@@ -69,15 +69,15 @@ class Solver(object):
 		reid = ex.configurations[1]._conf['reid']
 
 		# object detection
-		obj_detect = FRCNN_FPN(num_classes=2)
-		obj_detect.load_state_dict(torch.load(tracktor['obj_detect_model'],
-								map_location=lambda storage, loc: storage))
+		obj_detect = FRCNN_FPN(num_classes=2, correlation_head=model)
+		obj_detect_model = torch.load(tracktor['obj_detect_model'], map_location=lambda storage, loc: storage)
+		correlation_weights = model.state_dict()
+		for k in correlation_weights:
+			obj_detect_model.update({"correlation_head." + k: correlation_weights[k]})
+		obj_detect.load_state_dict(obj_detect_model)
 		obj_detect.eval()
 		obj_detect.cuda()
-		
-		# correlation head
-		correlation_head = model
-		
+				
 		# reid
 		reid_network = resnet50(pretrained=False, **reid['cnn'])
 		reid_network.load_state_dict(torch.load(tracktor['reid_weights'],
@@ -85,7 +85,7 @@ class Solver(object):
 		reid_network.eval()
 		reid_network.cuda()
 
-		self.tracker = Tracker(obj_detect, correlation_head, reid_network, tracktor['tracker'])
+		self.tracker = Tracker(obj_detect, reid_network, tracktor['tracker'])
 
 	def snapshot(self, model, iter):
 		filename = model.name + '_iter_{:d}'.format(iter) + '.pth'

@@ -6,11 +6,12 @@ import torch.nn.functional as F
 from torchvision.models.detection import FasterRCNN
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 from torchvision.models.detection.transform import resize_boxes
+from tracktor.correlation.correlation_head import CorrelationHead
 
 
 class FRCNN_FPN(FasterRCNN):
 
-    def __init__(self, num_classes):
+    def __init__(self, num_classes, correlation_head=None):
         backbone = resnet_fpn_backbone('resnet50', False)
         super(FRCNN_FPN, self).__init__(backbone, num_classes)
         # these values are cached to allow for feature reuse
@@ -21,6 +22,10 @@ class FRCNN_FPN(FasterRCNN):
         self.prev_original_image_sizes = None
         self.prev_preprocessed_images = None
         self.prev_features = None
+
+        self.correlation_head = correlation_head
+        if not self.correlation_head:
+            self.correlation_head = CorrelationHead()
 
     def detect(self, img):
         device = list(self.parameters())[0].device
@@ -66,6 +71,18 @@ class FRCNN_FPN(FasterRCNN):
         pred_boxes = resize_boxes(pred_boxes, self.preprocessed_images.image_sizes[0], self.original_image_sizes[0])
         pred_scores = pred_scores[:, 1:].squeeze(dim=1).detach()
         return pred_boxes, pred_scores
+
+    def predict_with_correlation(self, prev_boxes, current_boxes):
+
+        prev_boxes_features, current_boxes_features = self.get_feature_patches(prev_boxes, current_boxes)
+
+        box_regression = self.correlation_head(prev_boxes_features, current_boxes_features)
+        
+        pred_boxes = self.roi_heads.box_coder.decode(box_regression, [prev_boxes])
+        pred_boxes = pred_boxes[:, 1:].squeeze(dim=1).detach()
+        pred_boxes = resize_boxes(box_regression, self.preprocessed_images.image_sizes[0], self.original_image_sizes[0])
+
+        return pred_boxes
 
     def get_feature_patches(self, prev_boxes, current_boxes):
         device = list(self.parameters())[0].device

@@ -17,9 +17,8 @@ class Tracker:
 	# only track pedestrian
 	cl = 1
 
-	def __init__(self, obj_detect, correlation_head, reid_network, tracker_cfg):
+	def __init__(self, obj_detect, reid_network, tracker_cfg):
 		self.obj_detect = obj_detect
-		self.correlation_head = correlation_head
 		self.reid_network = reid_network
 		self.detection_person_thresh = tracker_cfg['detection_person_thresh']
 		self.regression_person_thresh = tracker_cfg['regression_person_thresh']
@@ -88,9 +87,7 @@ class Tracker:
 		positions = enlarged_boxes
 
 		if self.use_correlation:
-			prev_patches, current_patches = self.obj_detect.get_feature_patches(prev_boxes, enlarged_boxes)
-
-			correlated_boxes = self.correlation_head(prev_patches, current_patches)
+			correlated_boxes = self.obj_detect.predict_with_correlation(prev_boxes, enlarged_boxes)
 			correlated_boxes = clip_boxes_to_image(correlated_boxes, blob['img'].shape[-2:])
 			positions = correlated_boxes
 

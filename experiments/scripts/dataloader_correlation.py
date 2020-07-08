@@ -11,7 +11,7 @@ class Dataset(torch.utils.data.Dataset):
         
         self.lengths = []
         for seq in self.train_folders:
-            sample = self.file[f"/{seq}/fmap"]
+            sample = self.file[f"/{seq}/fmap_prev"]
             self.lengths.append(sample.shape[0])
             print(f"{seq} samples: [{self.lengths[-1]}]")
 
@@ -30,8 +30,8 @@ class Dataset(torch.utils.data.Dataset):
                 break
         
         # print(f"seq [{seq}] new index [{index}]")
-        fmap = self.file[f"/{seq}/fmap"][index]
+        fmap = self.file[f"/{seq}/fmap_prev"][index]
         fmap_enlarged = self.file[f"/{seq}/fmap_enlarged"][index]
-        label = self.file[f"/{seq}/labels"][index]
+        label = self.file[f"/{seq}/boxes_next"][index]
 
         return fmap, fmap_enlarged, label

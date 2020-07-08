@@ -29,7 +29,6 @@ class CorrelationHead(nn.Module):
         x = F.relu(self.fc2(x))
         pred_boxes = self.fc3(x)
 
-        #pred_boxes = resize_boxes(pred_boxes, self.preprocessed_images.image_sizes[0], self.original_image_sizes[0])
         return pred_boxes
 
     def load_from_rcnn(self, rcnn_model):
@@ -64,6 +63,8 @@ class CorrelationHead(nn.Module):
             total_loss = self.giou_loss(pred_boxes, gt_boxes)
         elif loss == "MSE":
             total_loss = F.mse_loss(pred_boxes, gt_boxes)
+        elif loss == "fasterRCNN":
+            total_loss = self.smooth_l1_loss(pred_boxes, gt_boxes)
         else:
             raise NotImplementedError("Loss: {}".format(loss))
 
@@ -95,3 +96,14 @@ class CorrelationHead(nn.Module):
 
         return torch.mean(1 - giou)
 
+    def smooth_l1_loss(self, input, target, beta: float = 1. / 9, size_average: bool = True):
+        """
+        very similar to the smooth_l1_loss from pytorch, but with
+        the extra beta parameter
+        """
+        n = torch.abs(input - target)
+        cond = n < beta
+        loss = torch.where(cond, 0.5 * n ** 2 / beta, n - 0.5 * beta)
+        if size_average:
+            return loss.mean()
+        return loss.sum()
