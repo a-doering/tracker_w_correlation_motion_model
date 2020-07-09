@@ -6,7 +6,6 @@ import torch.nn.functional as F
 from torchvision.models.detection import FasterRCNN
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 from torchvision.models.detection.transform import resize_boxes
-from tracktor.correlation.correlation_head import CorrelationHead
 
 
 class FRCNN_FPN(FasterRCNN):
@@ -76,11 +75,10 @@ class FRCNN_FPN(FasterRCNN):
 
         prev_boxes_features, current_boxes_features = self.get_feature_patches(prev_boxes, current_boxes)
 
-        box_regression = self.correlation_head(prev_boxes_features, current_boxes_features)
+        boxes_deltas = self.correlation_head(prev_boxes_features, current_boxes_features)
         
-        pred_boxes = self.roi_heads.box_coder.decode(box_regression, [prev_boxes])
-        pred_boxes = pred_boxes[:, 1:].squeeze(dim=1).detach()
-        pred_boxes = resize_boxes(box_regression, self.preprocessed_images.image_sizes[0], self.original_image_sizes[0])
+        pred_boxes = self.roi_heads.box_coder.decode(boxes_deltas, [prev_boxes]).squeeze(dim=1)
+        #pred_boxes = resize_boxes(pred_boxes, self.preprocessed_images.image_sizes[0], self.original_image_sizes[0])
 
         return pred_boxes
 

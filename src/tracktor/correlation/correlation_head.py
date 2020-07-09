@@ -15,6 +15,7 @@ class CorrelationHead(nn.Module):
         correlation_patch_size = 16 # flownet uses 21, if we want to use faster-rcnn weight needs to be 16
 
         self.name = "CorrelationHead"
+        self.roi_heads = None
 
         self.correlation_layer = SpatialCorrelationSampler(patch_size=correlation_patch_size, dilation_patch=2)
         self.fc1 = nn.Linear(correlation_patch_size ** 2 * feature_map_res ** 2, representation_size)
@@ -28,9 +29,9 @@ class CorrelationHead(nn.Module):
         
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        pred_boxes = self.fc3(x)
+        boxes_deltas = self.fc3(x)
 
-        return pred_boxes
+        return boxes_deltas
 
     def load_from_rcnn(self, rcnn_model):
         rcnn_model = torch.load(rcnn_model)
@@ -44,12 +45,13 @@ class CorrelationHead(nn.Module):
 
     def losses(self, batch, loss):
 
-        patch1, patch2, gt_boxes, _, _, _, _ = batch
+        patch1, patch2, gt_boxes, prev_boxes, _, _, _ = batch
 
         patch1 = Variable(patch1).cuda()
         patch2 = Variable(patch2).cuda()
 
         gt_boxes = gt_boxes.cuda()
+        prev_boxes = prev_boxes.cuda()
 
         # print("fmap:")
         # print(patch1*100)
@@ -58,7 +60,10 @@ class CorrelationHead(nn.Module):
         # print("labels:")
         # print(gt_boxes)
 
-        pred_boxes = self.forward(patch1, patch2)
+        boxes_deltas = self.forward(patch1, patch2)
+
+        pred_boxes = self.roi_heads.box_coder.decode(boxes_deltas, [prev_boxes]).squeeze(dim=1)
+        #pred_boxes = resize_boxes(pred_boxes, self.preprocessed_images.image_sizes[0], self.original_image_sizes[0])
 
         if loss == "GIoU":
             total_loss = self.giou_loss(pred_boxes, gt_boxes)

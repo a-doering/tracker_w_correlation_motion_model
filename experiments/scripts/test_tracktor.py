@@ -21,6 +21,7 @@ from tracktor.oracle_tracker import OracleTracker
 from tracktor.tracker import Tracker
 from tracktor.reid.resnet import resnet50
 from tracktor.utils import interpolate, plot_sequence, get_mot_accum, evaluate_mot_accums
+from tracktor.correlation.correlation_head import CorrelationHead
 
 ex = Experiment()
 
@@ -56,11 +57,12 @@ def main(tracktor, reid, _config, _log, _run):
     _log.info("Initializing object detector.")
 
     # object detection
-    obj_detect = FRCNN_FPN(num_classes=2)
+    obj_detect = FRCNN_FPN(num_classes=2, correlation_head=CorrelationHead())
     obj_detect_model = torch.load(_config['tracktor']['obj_detect_model'], map_location=lambda storage, loc: storage)
     correlation_weights = torch.load(_config['tracktor']['correlation_weights'], map_location=lambda storage, loc: storage)
     for k in correlation_weights:
-        obj_detect_model.update({"correlation_head." + k: correlation_weights[k]})
+        if "roi_heads" not in k.split("."):
+            obj_detect_model.update({"correlation_head." + k: correlation_weights[k]})
     obj_detect.load_state_dict(obj_detect_model)
     obj_detect.eval()
     obj_detect.cuda()

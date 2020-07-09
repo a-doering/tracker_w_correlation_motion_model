@@ -68,7 +68,7 @@ class Solver(object):
 		ex.add_config('experiments/cfgs/tracktor.yaml')
 		ex.add_config(ex.configurations[0]._conf['tracktor']['reid_config'])
 		tracktor = ex.configurations[0]._conf['tracktor']
-		reid = ex.configurations[1]._conf['reid']
+		# reid = ex.configurations[1]._conf['reid']
 
 		# object detection
 		obj_detect = FRCNN_FPN(num_classes=2, correlation_head=model)
@@ -80,14 +80,14 @@ class Solver(object):
 		obj_detect.eval()
 		obj_detect.cuda()
 				
-		# reid
-		reid_network = resnet50(pretrained=False, **reid['cnn'])
-		reid_network.load_state_dict(torch.load(tracktor['reid_weights'],
-									map_location=lambda storage, loc: storage))
-		reid_network.eval()
-		reid_network.cuda()
+		# # reid
+		# reid_network = resnet50(pretrained=False, **reid['cnn'])
+		# reid_network.load_state_dict(torch.load(tracktor['reid_weights'],
+		# 							map_location=lambda storage, loc: storage))
+		# reid_network.eval()
+		# reid_network.cuda()
 
-		self.tracker = Tracker(obj_detect, reid_network, tracktor['tracker'])
+		self.tracker = Tracker(obj_detect, None, tracktor['tracker'])
 
 	def snapshot(self, model, iter):
 		filename = model.name + '_iter_{:d}'.format(iter) + '.pth'
@@ -138,6 +138,10 @@ class Solver(object):
 		self._reset_histories()
 		iter_per_epoch = len(train_loader)
 
+		if not self.tracker:
+			self.initialize_tracktor(model)
+			model.roi_heads = self.tracker.obj_detect.roi_heads
+
 		print('START TRAIN.')
 		############################################################################
 		# TODO:                                                                    #
@@ -185,14 +189,13 @@ class Solver(object):
 
 					last_log_nth_losses = self._losses[-log_nth:]
 					train_loss = np.mean(last_log_nth_losses)
-					print('%s: %.3f' % ("total_loss", train_loss))
+					print('%s: %.6f' % ("total_loss", train_loss))
 					self.writer.add_scalar("train/total_loss", train_loss, i + epoch * iter_per_epoch)
 						
 	
 			# VALIDATION
 			if val_loader and log_nth and epoch % 5 == 0:
 				print("Validating...")
-				#if not self.tracker: self.initialize_tracktor(model)
 				model.eval()
 				# mot_accums = []
 				# for seq in val_loader:
@@ -218,8 +221,10 @@ class Solver(object):
 
 						patch1 = Variable(batch[0]).cuda()
 						patch2 = Variable(batch[1]).cuda()
-						pred_box = model.forward(patch1, patch2)
-						
+						prev_boxes = batch[3].cuda()
+						boxes_deltas = model.forward(patch1, patch2)
+						pred_box = model.roi_heads.box_coder.decode(boxes_deltas, [prev_boxes]).squeeze(dim=1)
+
 						prev_image, current_image = plot_boxes_one_pair(batch, (epoch+1) * iter_per_epoch, predictions=pred_box.squeeze(), save=True)
 
 						# img_grid = torchvision.utils.make_grid([prev_image, current_image], padding=20)
