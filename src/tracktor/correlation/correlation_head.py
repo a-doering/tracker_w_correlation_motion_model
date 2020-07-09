@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from spatial_correlation_sampler import SpatialCorrelationSampler
+from torchvision.ops.boxes import box_iou
 
 class CorrelationHead(nn.Module):
     def __init__(self):
@@ -61,10 +62,14 @@ class CorrelationHead(nn.Module):
 
         if loss == "GIoU":
             total_loss = self.giou_loss(pred_boxes, gt_boxes)
+        elif loss == "IoU":
+            total_loss = box_iou(pred_boxes, gt_boxes).diag()
+            total_loss = torch.mean(total_loss)
         elif loss == "MSE":
             total_loss = F.mse_loss(pred_boxes, gt_boxes)
         elif loss == "fasterRCNN":
             total_loss = self.smooth_l1_loss(pred_boxes, gt_boxes)
+            total_loss /= len(gt_boxes)
         else:
             raise NotImplementedError("Loss: {}".format(loss))
 

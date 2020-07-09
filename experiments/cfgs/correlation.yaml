@@ -4,7 +4,7 @@ correlation:
   description:
   seed: 12345
   db_train: dataset_more_info/correlation_dataset_1.50_0.50.hdf5
-  db_val: False #mot17_10_FRCNN17
+  db_val: dataset_more_info/correlation_dataset_1.50_0.50.hdf5
 
   load_from_rcnn: true
   rcnn_weights: output/faster_rcnn_fpn_training_mot_17/model_epoch_27.model

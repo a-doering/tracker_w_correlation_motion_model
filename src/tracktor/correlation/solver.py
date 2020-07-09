@@ -57,7 +57,7 @@ class Solver(object):
 		Resets train and val histories for the accuracy and the loss.
 		"""
 		self._losses = []
-		self._val_losses = {}
+		self._val_losses = []
 
 	def initialize_tracktor(self, model):
 		print("Initializing tracktor...")
@@ -190,31 +190,35 @@ class Solver(object):
 			# VALIDATION
 			if val_loader and log_nth and epoch % 5 == 0:
 				print("Validating...")
-				if not self.tracker: self.initialize_tracktor(model)
+				#if not self.tracker: self.initialize_tracktor(model)
 				model.eval()
-				mot_accums = []
-				for seq in val_loader:
-					print(seq)
-					self.tracker.reset()
-					data_loader = DataLoader(seq, batch_size=1, shuffle=True)
-					for i, frame in enumerate(tqdm(data_loader)):
-						#if i > len(seq) * 0.05: break
-						with torch.no_grad():
-							self.tracker.step(frame)
-					mot_accums.append(get_mot_accum(self.tracker.get_results(), seq))
-				results = get_overall_results(mot_accums)
+				# mot_accums = []
+				# for seq in val_loader:
+				# 	print(seq)
+				# 	self.tracker.reset()
+				# 	data_loader = DataLoader(seq, batch_size=1, shuffle=True)
+				# 	for i, frame in enumerate(tqdm(data_loader)):
+				# 		#if i > len(seq) * 0.05: break
+				# 		with torch.no_grad():
+				# 			self.tracker.step(frame)
+				# 	mot_accums.append(get_mot_accum(self.tracker.get_results(), seq))
+				# results = get_overall_results(mot_accums)
 
-				for k, v in results.items():
-					if k not in self._val_losses.keys():
-						self._val_losses[k] = []
-					self._val_losses[k].append(v[-1])
-					
+				# for k, v in results.items():
+				# 	if k not in self._val_losses.keys():
+				# 		self._val_losses[k] = []
+				# 	self._val_losses[k].append(v[-1])
+
+				for i, batch in enumerate(val_loader):
+					loss = model.losses(batch, "IoU")
+					self._val_losses.append(loss.data.cpu().numpy())
+
 				model.train()
-				for k,v in self._val_losses.items():
-					last_log_nth_losses = self._val_losses[k][-log_nth:]
-					val_loss = np.mean(last_log_nth_losses)
-					if k in ['mota', 'idf1']: print('%s: %.3f' % (k, val_loss))
-					self.writer.add_scalar("val/"+k, val_loss, (epoch+1) * iter_per_epoch)
+
+				last_log_nth_losses = self._val_losses[-log_nth:]
+				val_loss = np.mean(last_log_nth_losses)
+				print('%s: %.3f' % ("IoU", val_loss))
+				self.writer.add_scalar("val/iou", val_loss, i + epoch * iter_per_epoch)
 
 				#blobs_val = data_layer_val.forward()
 				#tracks_val = model.val_predict(blobs_val)
