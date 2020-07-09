@@ -12,8 +12,8 @@ from tracktor.config import cfg
 from tracktor.config import get_output_dir, get_tb_dir
 from tracktor.correlation.solver import Solver
 from tracktor.datasets.factory import Datasets
+from tracktor.datasets.dataloader_correlation import Dataset
 from tracktor.correlation.correlation_head import CorrelationHead
-from dataloader_correlation import Dataset
 
 ex = Experiment()
 ex.add_config('experiments/cfgs/correlation.yaml')

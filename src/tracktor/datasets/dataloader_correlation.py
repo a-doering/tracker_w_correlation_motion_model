@@ -30,8 +30,13 @@ class Dataset(torch.utils.data.Dataset):
                 break
         
         # print(f"seq [{seq}] new index [{index}]")
-        fmap = self.file[f"/{seq}/fmap_prev"][index]
+        fmap_prev = self.file[f"/{seq}/fmap_prev"][index]
         fmap_enlarged = self.file[f"/{seq}/fmap_enlarged"][index]
-        label = self.file[f"/{seq}/boxes_next"][index]
+        gt_boxes = self.file[f"/{seq}/boxes_next"][index]
 
-        return fmap, fmap_enlarged, label
+        boxes = self.file[f"/{seq}/boxes"][index]
+        boxes_enlarged = self.file[f"/{seq}/boxes_enlarged"][index]
+        im_name_prev = self.file[f"/{seq}/names"][index]
+        im_name_current = self.file[f"/{seq}/names_next"][index]
+
+        return fmap_prev, fmap_enlarged, gt_boxes, boxes, boxes_enlarged, im_name_prev, im_name_current

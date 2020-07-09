@@ -44,7 +44,7 @@ class CorrelationHead(nn.Module):
 
     def losses(self, batch, loss):
 
-        patch1, patch2, gt_boxes = batch
+        patch1, patch2, gt_boxes, _, _, _, _ = batch
 
         patch1 = Variable(patch1).cuda()
         patch2 = Variable(patch2).cuda()
