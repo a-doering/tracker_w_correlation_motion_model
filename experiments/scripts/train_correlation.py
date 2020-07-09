@@ -53,7 +53,8 @@ def my_main(_config, correlation):
     if correlation['db_val']:
         h5_file_val = osp.join(cfg.DATA_DIR, 'correlation_dataset', correlation['db_val'])
         db_val = Dataset(h5_file_val, ['MOT17-10'])
-        db_val = DataLoader(db_val, batch_size=512)
+        # Stick to batchsize = 1, plot images is not vectorized yet
+        db_val = DataLoader(db_val, batch_size=1)
         #db_val = Datasets(correlation['db_val'])
     else:
         db_val = None

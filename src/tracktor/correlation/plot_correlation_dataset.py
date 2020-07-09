@@ -16,7 +16,7 @@ def im_name_to_im_path(im_name):
     im_path = osp.join(cfg.DATA_DIR, "MOT17Det", "train", seq, "img1", image_number + ".jpg")
     return im_path
 
-def plot_boxes_one_pair(sample, predictions=None, save=False):
+def plot_boxes_one_pair(sample, step, predictions=None, save=False):
     """Plot boxes on image"""
     _, _, boxes_gt, boxes, boxes_enlarged, im_name_prev, im_name_current = sample
     
@@ -30,14 +30,14 @@ def plot_boxes_one_pair(sample, predictions=None, save=False):
     assert im_name_prev.split("_")[-1] == im_name_current.split("_")[-1]
     track_id = im_name_prev.split("_")[-1]
 
-    output_dir = osp.join(cfg.ROOT_DIR, "output", "dataset_test/") if save else None
+    output_dir = osp.join(cfg.ROOT_DIR, "output", "dataset_test") if save else None
 
     #################################        Prev image plotting        #################################
     im_path_prev = im_name_to_im_path(im_name_prev)
     cmap = ['cyan', 'cyan']
     linestyle = ['solid', 'dashed']
     boxes_to_print = [boxes, boxes_enlarged]
-    output_name = output_dir + im_name_current + "_prev.jpg" if output_dir else None
+    output_name = osp.join(output_dir, str(step) + "_" + im_name_current + "_prev.jpg") if output_dir else None
 
     prev_image = plot_image(im_path_prev, boxes_to_print, cmap, linestyle, track_id, output_name)
 
@@ -46,11 +46,11 @@ def plot_boxes_one_pair(sample, predictions=None, save=False):
     cmap = ['r', 'cyan', 'm']
     linestyle = ['solid', 'solid', 'solid']
     boxes_to_print = [boxes_gt, boxes_enlarged, predictions]
-    if predictions == None:
+    if predictions is None:
         boxes_to_print = boxes_to_print[:-1]
         cmap = cmap[:-1]
         linestyle = linestyle[:-1]
-    output_name = output_dir + im_name_current + ".jpg" if output_dir else None
+    output_name = osp.join(output_dir, str(step) + "_" + im_name_current + ".jpg") if output_dir else None
 
     current_image = plot_image(im_path_current, boxes_to_print, cmap, linestyle, track_id, output_name)
 
@@ -80,14 +80,15 @@ def plot_image(base_im_path, boxes_to_print, cmap, linestyle, track_id, output_n
                 linestyle=style
             ))
 
-        if i == 1:
+        if i == 0:
             ax.annotate(track_id, (box[0] + (box[2] - box[0]) / 2.0, box[1] + (box[3] - box[1]) / 2.0),
                     color='k', weight='bold', fontsize=18, ha='center', va='center')
 
     plt.axis('off')
     # plt.tight_layout()
     plt.draw()
-    image = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
+    image = np.fromstring(fig.canvas.tostring_rgb(), dtype='uint8')
+    image = image.reshape((3,) + fig.canvas.get_width_height()[::-1])
 
     if output_name:
         plt.savefig(output_name, dpi=100)

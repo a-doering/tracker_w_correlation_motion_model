@@ -14,6 +14,7 @@ from tracktor.utils import plot_tracks, get_mot_accum, get_overall_results
 from tracktor.frcnn_fpn import FRCNN_FPN
 from tracktor.tracker import Tracker
 from tracktor.reid.resnet import resnet50
+from tracktor.correlation.plot_correlation_dataset import plot_boxes_one_pair
 
 import tensorboardX as tb
 
@@ -208,8 +209,21 @@ class Solver(object):
 				# 	if k not in self._val_losses.keys():
 				# 		self._val_losses[k] = []
 				# 	self._val_losses[k].append(v[-1])
+		
+				image_to_plot = "MOT17-10_000530_000023"
 
-				for i, batch in enumerate(val_loader):
+				for batch in val_loader:
+					if batch[-1][0] == image_to_plot:
+						patch1, patch2, gt_boxes, _, _, _, _ = batch
+
+						patch1 = Variable(patch1).cuda()
+						patch2 = Variable(patch2).cuda()
+						gt_boxes = gt_boxes.cuda()
+						pred_box = model.forward(patch1, patch2)
+						
+						prev_image, current_image = plot_boxes_one_pair(batch, (epoch+1) * iter_per_epoch, predictions=pred_box.squeeze(), save=True)
+						# self.writer.add_image(image_to_plot + "_prev", prev_image, (epoch+1) * iter_per_epoch)
+						# self.writer.add_image(image_to_plot, current_image, (epoch+1) * iter_per_epoch)
 					loss = model.losses(batch, "IoU")
 					self._val_losses.append(loss.data.cpu().numpy())
 
@@ -223,7 +237,6 @@ class Solver(object):
 				#blobs_val = data_layer_val.forward()
 				#tracks_val = model.val_predict(blobs_val)
 				#im = plot_tracks(blobs_val, tracks_val)
-				#self.val_writer.add_image('val_tracks', im, (epoch+1) * iter_per_epoch)
 
 			self.snapshot(model, (epoch+1)*iter_per_epoch)
 
