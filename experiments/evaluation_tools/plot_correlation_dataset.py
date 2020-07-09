@@ -13,7 +13,7 @@ def im_name_to_im_path(im_name):
     im_path = osp.join(cfg.DATA_DIR, "MOT17Det", "train", seq, "img1", image_number + ".jpg")
     return im_path
 
-def plot_boxes_one_pair(h5_file, seq, index):
+def plot_boxes_one_pair(h5_file, seq, index, predictions=None):
     """Plot boxes on image"""
     boxes = h5_file[f"/{seq}/boxes"][index]
     boxes_enlarged = h5_file[f"/{seq}/boxes_enlarged"][index]
@@ -47,7 +47,7 @@ def plot_boxes_one_pair(h5_file, seq, index):
     fig.add_axes(ax)
     ax.imshow(im_0)
 
-    cmap = ['r', 'cyan', 'g']
+    cmap = ['r', 'cyan']
     t = [boxes, boxes_enlarged]
     for i in range(len(t)):
         t_i = t[i]
@@ -85,8 +85,10 @@ def plot_boxes_one_pair(h5_file, seq, index):
     width = float(sizes[1])
     ax.imshow(im_1)
 
-    cmap = ['r', 'cyan', 'g']
-    t = [boxes, boxes_enlarged, boxes_next]
+    cmap = ['w', 'cyan', 'm']
+    t = [boxes_next, boxes_enlarged]
+    if predictions is not None:
+        t = [boxes_next, boxes_enlarged, predictions]
     for i in range(len(t)):
         t_i = t[i]
         ax.add_patch(
