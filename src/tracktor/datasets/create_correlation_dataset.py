@@ -8,9 +8,11 @@ import os.path as osp
 from PIL import Image
 import numpy as np
 import csv
+import copy
 
 def enlarge_boxes(bb, boxes_enlargement_factor):
     """Enlarges bounding box widht and height by some factor."""
+    bb = bb.copy()
     if boxes_enlargement_factor > 1.0:
         delta = (boxes_enlargement_factor - 1) / 2
 
@@ -26,6 +28,7 @@ def enlarge_boxes(bb, boxes_enlargement_factor):
 
 def clip_boxes_to_image(bb, size):
     """Clips boxes to size"""
+    bb = bb.copy()
     height, width = size
     bb[0] = np.clip(bb[0], 0, width)
     bb[1] = np.clip(bb[1], 0, height)
@@ -133,19 +136,27 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, verbose=F
             if pairs_in_frame == 0:
                 continue
             boxes = [total[i]['gt'][id] for id in id_in_frame_and_next[i]] # bounding boxes of the previous frame
+            # for id in id_in_frame_and_next[i]:
+            #     print(id)
+
             boxes_next = [total[i+1]['gt'][id] for id in id_in_frame_and_next[i]]
             enlarged_boxes = [clip_boxes_to_image(enlarge_boxes(total[i]['gt'][id], boxes_enlargement_factor), (imHeight, imWidth))  for id in id_in_frame_and_next[i]]# enlarged bounding boxes of the previous frame
+            # print(boxes[0])
+            # print(enlarged_boxes[0])
+            # print(boxes_next[0])
+            # print(40*'+')
             # Sequence Name _ frame (of first image) _ id
             # MOT17-02_000001_000001
             names = [seq + '_{:06}_'.format(i) + '{:06}'.format(id) for id in id_in_frame_and_next[i]]
-            names_next = [seq + '_{:06}_'.format(i) + '{:06}'.format(id+1) for id in id_in_frame_and_next[i]]
+            names_next = [seq + '_{:06}_'.format(i+1) + '{:06}'.format(id) for id in id_in_frame_and_next[i]]
 
             h5_dataset_3[pairs_stored:pairs_stored+pairs_in_frame] = boxes_next
             h5_dataset_4[pairs_stored:pairs_stored+pairs_in_frame] = boxes
             h5_dataset_5[pairs_stored:pairs_stored+pairs_in_frame] = enlarged_boxes
             h5_dataset_6[pairs_stored:pairs_stored+pairs_in_frame] = names
             h5_dataset_7[pairs_stored:pairs_stored+pairs_in_frame] = names_next           
-
+            # print(names)
+            # print(names_next)
             boxes = torch.tensor(boxes)
             enlarged_boxes = torch.tensor(enlarged_boxes)
 
@@ -185,8 +196,8 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, verbose=F
 
 # Load model
 print('Loading model...')
-obj_detect = FRCNN_FPN(num_classes=2)
-obj_detect.load_state_dict(torch.load("output/faster_rcnn_fpn_training_mot_17/model_epoch_27.model",
+obj_detect = FRCNN_FPN(num_classes=2, correlation_head=None)
+obj_detect.load_state_dict(torch.load("output/faster_rcnn_fpn_training_mot_17/model_epoch_27_original.model",
                             map_location=lambda storage, loc: storage))
 obj_detect.eval()
 obj_detect.cuda()
@@ -194,11 +205,11 @@ print('Model loaded!')
 
 # Hardcoded loader for MOT17
 mot_dir = osp.join(cfg.DATA_DIR, 'MOT17Det', 'train')
-sequences = ['MOT17-02', 'MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-11', 'MOT17-13']
+sequences = ['MOT17-02']#, 'MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-11', 'MOT17-13']
 
 # Hardcoded parameters
 vis_threshold = [0.5]
-boxes_enlargement_factor = [1.3,2.0,1.1,1.05,3.0]#[1.05, 1.1, 1.2,1.3,1.5]
+boxes_enlargement_factor = [1.5]#1.3,2.0,1.1,1.05,3.0]#[1.05, 1.1, 1.2,1.3,1.5]
 
 for b in boxes_enlargement_factor:
     for v in vis_threshold:

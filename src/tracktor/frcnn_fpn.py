@@ -24,8 +24,8 @@ class FRCNN_FPN(FasterRCNN):
         self.prev_features = None
 
         self.correlation_head = correlation_head
-        if not self.correlation_head:
-            self.correlation_head = CorrelationHead()
+        # if not self.correlation_head:
+        #     self.correlation_head = CorrelationHead()
 
     def detect(self, img):
         device = list(self.parameters())[0].device
