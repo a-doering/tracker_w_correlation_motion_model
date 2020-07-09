@@ -81,4 +81,4 @@ def my_main(_config, correlation):
     # we want to keep lr until iter 15000 and from there to iter 25000 a exponential decay
     l = eval(f"lambda epoch: 1 if epoch < {start_decrease} else 0.001**((epoch - {start_decrease})/({max_epochs}-{start_decrease}))")
     solver = Solver(output_dir, tb_dir, lr_scheduler_lambda=l)
-    solver.train(network, db_train, db_val, max_epochs, 100, model_args=correlation['model_args'])
+    solver.train(network, db_train, db_val, max_epochs, 50, model_args=correlation['model_args'])

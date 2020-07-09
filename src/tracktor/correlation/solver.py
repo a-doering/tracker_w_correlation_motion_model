@@ -92,7 +92,10 @@ class Solver(object):
 	def snapshot(self, model, iter):
 		filename = model.name + '_iter_{:d}'.format(iter) + '.pth'
 		filename = os.path.join(self.output_dir, filename)
-		torch.save(model.state_dict(), filename)
+		parameters = model.state_dict()
+		for k in model.state_dict():
+			if "roi_heads" in k.split("."): del parameters[k]
+		torch.save(parameters, filename)
 		print('Wrote snapshot to: {:s}'.format(filename))
 
 		# Delete old snapshots (keep minimum 3 latest)

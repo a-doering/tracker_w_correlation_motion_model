@@ -61,8 +61,7 @@ def main(tracktor, reid, _config, _log, _run):
     obj_detect_model = torch.load(_config['tracktor']['obj_detect_model'], map_location=lambda storage, loc: storage)
     correlation_weights = torch.load(_config['tracktor']['correlation_weights'], map_location=lambda storage, loc: storage)
     for k in correlation_weights:
-        if "roi_heads" not in k.split("."):
-            obj_detect_model.update({"correlation_head." + k: correlation_weights[k]})
+        obj_detect_model.update({"correlation_head." + k: correlation_weights[k]})
     obj_detect.load_state_dict(obj_detect_model)
     obj_detect.eval()
     obj_detect.cuda()
