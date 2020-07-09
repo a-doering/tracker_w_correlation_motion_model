@@ -47,7 +47,7 @@ def my_main(_config, correlation):
 
     #db_train = Datasets(correlation['db_train'], correlation['dataloader'])
     h5_file = osp.join(cfg.DATA_DIR, 'correlation_dataset', correlation['db_train'])
-    db_train = Dataset(h5_file, ['MOT17-13'])
+    db_train = Dataset(h5_file, ['MOT17-02', 'MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10','MOT17-11'])
     db_train = DataLoader(db_train, batch_size=512, shuffle=True)
 
     if correlation['db_val']:
@@ -76,8 +76,9 @@ def my_main(_config, correlation):
 
     #TODO change scheduling of training and adapt to our patch based correlation approach
     iters_per_epoch = len(db_train)
-    max_epochs = 300
+    max_epochs = 500
+    start_decrease = 150
     # we want to keep lr until iter 15000 and from there to iter 25000 a exponential decay
-    l = eval(f"lambda epoch: 1 if epoch < 50 else 0.001**((epoch - 50)/({max_epochs}-50))")
+    l = eval(f"lambda epoch: 1 if epoch < {start_decrease} else 0.001**((epoch - {start_decrease})/({max_epochs}-{start_decrease}))")
     solver = Solver(output_dir, tb_dir, lr_scheduler_lambda=l)
-    solver.train(network, db_train, db_val, max_epochs, 10, model_args=correlation['model_args'])
+    solver.train(network, db_train, db_val, max_epochs, 100, model_args=correlation['model_args'])
