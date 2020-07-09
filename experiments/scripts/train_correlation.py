@@ -47,12 +47,12 @@ def my_main(_config, correlation):
 
     #db_train = Datasets(correlation['db_train'], correlation['dataloader'])
     h5_file = osp.join(cfg.DATA_DIR, 'correlation_dataset', correlation['db_train'])
-    db_train = Dataset(h5_file, ['MOT17-10'])
+    db_train = Dataset(h5_file, ['MOT17-13'])
     db_train = DataLoader(db_train, batch_size=512, shuffle=True)
 
     if correlation['db_val']:
         h5_file_val = osp.join(cfg.DATA_DIR, 'correlation_dataset', correlation['db_val'])
-        db_val = Dataset(h5_file_val, ['MOT17-10'])
+        db_val = Dataset(h5_file_val, ['MOT17-13'])
         # Stick to batchsize = 1, plot images is not vectorized yet
         db_val = DataLoader(db_val, batch_size=1)
         #db_val = Datasets(correlation['db_val'])

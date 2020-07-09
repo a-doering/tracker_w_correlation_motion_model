@@ -6,6 +6,7 @@ import fnmatch
 from tqdm import tqdm
 
 import torch
+import torchvision
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 from torch.optim.lr_scheduler import LambdaLR
@@ -42,13 +43,13 @@ class Solver(object):
 		self.output_dir = output_dir
 		self.tb_dir = tb_dir
 		# Simply put '_val' at the end to save the summaries from the validation set
-		self.tb_val_dir = tb_dir + '_val'
+		# self.tb_val_dir = tb_dir + '_val'
 		if not os.path.exists(self.output_dir):
 			os.makedirs(self.output_dir)
 		if not os.path.exists(self.tb_dir):
 			os.makedirs(self.tb_dir)
-		if not os.path.exists(self.tb_val_dir):
-			os.makedirs(self.tb_val_dir)
+		# if not os.path.exists(self.tb_val_dir):
+		# 	os.makedirs(self.tb_val_dir)
 
 		self.tracker = None
 		self._reset_histories()
@@ -210,18 +211,19 @@ class Solver(object):
 				# 		self._val_losses[k] = []
 				# 	self._val_losses[k].append(v[-1])
 		
-				image_to_plot = "MOT17-10_000530_000023"
+				images_to_plot = ["MOT17-13_000118_000002", "MOT17-13_000502_000021","MOT17-13_000545_000025", "MOT17-13_000722_000028"]
 
 				for batch in val_loader:
-					if batch[-1][0] == image_to_plot:
-						patch1, patch2, gt_boxes, _, _, _, _ = batch
+					if batch[-1][0] in images_to_plot:
 
-						patch1 = Variable(patch1).cuda()
-						patch2 = Variable(patch2).cuda()
-						gt_boxes = gt_boxes.cuda()
+						patch1 = Variable(batch[0]).cuda()
+						patch2 = Variable(batch[1]).cuda()
 						pred_box = model.forward(patch1, patch2)
 						
 						prev_image, current_image = plot_boxes_one_pair(batch, (epoch+1) * iter_per_epoch, predictions=pred_box.squeeze(), save=True)
+
+						# img_grid = torchvision.utils.make_grid([prev_image, current_image], padding=20)
+						# self.writer.add_image(image_to_plot, img_grid, (epoch+1) * iter_per_epoch)
 						# self.writer.add_image(image_to_plot + "_prev", prev_image, (epoch+1) * iter_per_epoch)
 						# self.writer.add_image(image_to_plot, current_image, (epoch+1) * iter_per_epoch)
 					loss = model.losses(batch, "IoU")

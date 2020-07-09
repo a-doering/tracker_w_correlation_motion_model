@@ -1,6 +1,7 @@
 from os import path as osp
 
 import numpy as np
+import torch
 import cv2
 import matplotlib
 import matplotlib.pyplot as plt
@@ -87,8 +88,9 @@ def plot_image(base_im_path, boxes_to_print, cmap, linestyle, track_id, output_n
     plt.axis('off')
     # plt.tight_layout()
     plt.draw()
-    image = np.fromstring(fig.canvas.tostring_rgb(), dtype='uint8')
+    image = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
     image = image.reshape((3,) + fig.canvas.get_width_height()[::-1])
+    image = torch.from_numpy(image)
 
     if output_name:
         plt.savefig(output_name, dpi=100)
