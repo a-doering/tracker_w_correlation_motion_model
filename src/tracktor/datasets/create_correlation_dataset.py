@@ -42,10 +42,19 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, verbose=F
     print(100*'#')
     filename = 'correlation_dataset_{:.2f}_{:.2f}.hdf5'.format(boxes_enlargement_factor, vis_threshold)
     h5_file = osp.join(cfg.DATA_DIR, 'correlation_dataset', 'dataset_more_info', filename)
-    print(h5_file)
 
     h5 = h5py.File(h5_file, mode='w')
     for seq in sequences:
+
+        print(100*'#')
+        print("Sequence: {}".format(seq))
+        if seq[3:5] == "17":
+            mot_dir = osp.join(cfg.DATA_DIR, 'MOT17Det', 'train')
+        elif seq[3:5] == "20":
+            mot_dir = osp.join(cfg.DATA_DIR, 'MOT20', 'train')
+        else: 
+            raise Exception("No valid MOT challenge.")
+
         seq_im_dir = osp.join(mot_dir, seq)
         gt_file = osp.join(mot_dir, seq, 'gt', 'gt.txt')
         config_file = osp.join(mot_dir, seq, 'seqinfo.ini')
@@ -107,8 +116,6 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, verbose=F
 
         num_pairs = sum([len(x) for x in id_in_frame_and_next.values()])
         num_detections = sum([len(x) for x in id_in_frame.values()])
-        print(100*'#')
-        print("Sequence: {}".format(seq))
         print("Number of detections: {}".format(num_detections))
         print("Number of pairs: {}".format(num_pairs))
         # Create a group per sequence. 
@@ -121,7 +128,10 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, verbose=F
         h5_dataset_5 = group.create_dataset("boxes_enlarged",(num_pairs, 4), dtype=np.float32)
         h5_dataset_6 = group.create_dataset("names",(num_pairs,),dtype=h5py.special_dtype(vlen=str))
         h5_dataset_7 = group.create_dataset("names_next",(num_pairs,),dtype=h5py.special_dtype(vlen=str))
-
+        # Fill with data here
+        h5_dataset_8 = group.create_dataset("imWidth", data = np.array(imWidth, dtype=np.int32), dtype=np.int32)
+        h5_dataset_9 = group.create_dataset("imHeight",data = np.array(imHeight, dtype=np.int32), dtype=np.int32)
+        
         pairs_stored = 0
         # Create feature maps
         for i in range(1, seqLength):
@@ -204,12 +214,12 @@ obj_detect.cuda()
 print('Model loaded!')
 
 # Hardcoded loader for MOT17
-mot_dir = osp.join(cfg.DATA_DIR, 'MOT17Det', 'train')
-sequences = ['MOT17-02']#, 'MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-11', 'MOT17-13']
+sequences = ['MOT20-01', 'MOT20-02', 'MOT20-03', 'MOT20-05' ,'MOT17-02','MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-11', 'MOT17-13']
 
 # Hardcoded parameters
 vis_threshold = [0.5]
-boxes_enlargement_factor = [1.5]#1.3,2.0,1.1,1.05,3.0]#[1.05, 1.1, 1.2,1.3,1.5]
+boxes_enlargement_factor = [1.2, 1.5, 1.0, 1.05, 1.1,1.3,2.0]#[1.0,1.05, 1.1, 1.2,1.3,1.5,2.0]
+
 
 for b in boxes_enlargement_factor:
     for v in vis_threshold:
