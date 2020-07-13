@@ -197,7 +197,7 @@ class Solver(object):
 						
 	
 			# VALIDATION
-			if val_loader and log_nth and epoch % 5 == 0:
+			if val_loader and log_nth and epoch % 1 == 0:
 				print("Validating...")
 				model.eval()
 				# mot_accums = []
@@ -220,7 +220,8 @@ class Solver(object):
 				images_to_plot = ["MOT17-13_000118_000002", "MOT17-13_000502_000021","MOT17-13_000545_000025", "MOT17-13_000722_000028"]
 
 				for batch in val_loader:
-					if batch[-1][0] in images_to_plot:
+					# If image name in images to plot
+					if batch[6][0] in images_to_plot:
 
 						patch1 = Variable(batch[0]).cuda()
 						patch2 = Variable(batch[1]).cuda()

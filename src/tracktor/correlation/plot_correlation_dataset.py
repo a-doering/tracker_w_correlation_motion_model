@@ -25,7 +25,7 @@ def im_name_to_im_path(im_name):
 
 def plot_boxes_one_pair(sample, step, predictions=None, save=False):
     """Plot boxes on image"""
-    _, _, boxes_gt, boxes, boxes_enlarged, im_name_prev, im_name_current = sample
+    _, _, boxes_gt, boxes, boxes_enlarged, im_name_prev, im_name_current, _, _ = sample
     
     # Unpacking batch (first element)
     boxes_gt = boxes_gt.squeeze()
