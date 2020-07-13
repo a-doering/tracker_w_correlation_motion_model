@@ -52,7 +52,7 @@ def my_main(_config, correlation):
 
     if correlation['db_val']:
         h5_file_val = osp.join(cfg.DATA_DIR, 'correlation_dataset', correlation['db_val'])
-        db_val = Dataset(h5_file_val, ['MOT17-13'])    boxes[int(row[0])][int(row[1])] = bb
+        db_val = Dataset(h5_file_val, ['MOT17-13'])
         # Stick to batchsize = 1, plot images is not vectorized yet
         db_val = DataLoader(db_val, batch_size=1)
         #db_val = Datasets(correlation['db_val'])
@@ -75,8 +75,8 @@ def my_main(_config, correlation):
     print("[*] Solving ...")
 
     iters_per_epoch = len(db_train)
-    max_epochs = 500
-    start_decrease = 150
+    max_epochs = 200
+    start_decrease = 60
     # we want to keep lr until iter 15000 and from there to iter 25000 a exponential decay
     l = eval(f"lambda epoch: 1 if epoch < {start_decrease} else 0.001**((epoch - {start_decrease})/({max_epochs}-{start_decrease}))")
     solver = Solver(output_dir, tb_dir, lr_scheduler_lambda=l)
