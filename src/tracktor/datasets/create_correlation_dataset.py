@@ -36,7 +36,7 @@ def clip_boxes_to_image(bb, size):
     bb[3] = np.clip(bb[3], 0, height)
     return bb
 
-def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, append=False, verbose=False):
+def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, append=False, verbose=False, truncate=False):
     """Create a dataset for the correlation layer"""
     # Open hdf5 file and create arrays
     print(100*'#')
@@ -81,6 +81,11 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, append=Fa
         imDir = config['Sequence']['imDir']
         imWidth = int(config['Sequence']['imWidth'])
         imHeight = int(config['Sequence']['imHeight'])
+
+        # Truncate sequence length
+        if truncate and seqLength > 1050:
+            seqLength = seqLength % 1000
+            print("Seqlength truncated to {} save memory.".format(seqLength))
 
         # Constructing tracks, one sample per frame. Access boxes like: boxes[frame][id]
         total = {}
@@ -228,13 +233,13 @@ print('Model loaded!')
 
 # Hardcoded loader for MOT17
 # sequences = ['MOT20-01', 'MOT20-02', 'MOT20-03', 'MOT20-05' ,'MOT17-02','MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-11', 'MOT17-13']
-sequences = ['MOT20-01', 'MOT20-02', 'MOT20-03', 'MOT17-02','MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-11', 'MOT17-13']#'MOT20-05', 
+sequences = ['MOT20-01', 'MOT20-02', 'MOT20-03', 'MOT20-05','MOT17-02','MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-11', 'MOT17-13']
 
 # Hardcoded parameters
 vis_threshold = [0.5]
-boxes_enlargement_factor = [1.2]#, 1.5, 1.0, 1.05, 1.1,1.3,2.0]#[1.0,1.05, 1.1, 1.2,1.3,1.5,2.0]
+boxes_enlargement_factor = [1.2, 1.5, 1.0]#, 1.5, 1.0, 1.05, 1.1,1.3,2.0]#[1.0,1.05, 1.1, 1.2,1.3,1.5,2.0]
 
 
 for b in boxes_enlargement_factor:
     for v in vis_threshold:
-        create_dataset(b,v, sequences, append=False, verbose=False)
+        create_dataset(b,v, sequences, append=False, verbose=False, truncate=True)
