@@ -14,7 +14,13 @@ from tracktor.datasets.dataloader_correlation import Dataset
 def im_name_to_im_path(im_name):
     """Convert im_name from h5py dataset to im_path"""
     seq , image_number, id = im_name.split("_")
-    im_path = osp.join(cfg.DATA_DIR, "MOT17Det", "train", seq, "img1", image_number + ".jpg")
+
+    if seq[3:5] == "17":
+        im_path = osp.join(cfg.DATA_DIR, 'MOT17Det', 'train', seq, "img1", image_number + ".jpg")
+    elif seq[3:5] == "20":
+        im_path = osp.join(cfg.DATA_DIR, 'MOT20', 'train', seq, "img1", image_number + ".jpg")
+    else: 
+        raise Exception("No valid MOT challenge.")
     return im_path
 
 def plot_boxes_one_pair(sample, step, predictions=None, save=False):
