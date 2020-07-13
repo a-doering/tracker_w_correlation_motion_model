@@ -11,7 +11,7 @@ from tracktor.config import cfg
 
 from tracktor.config import get_output_dir, get_tb_dir
 from tracktor.correlation.solver import Solver
-from tracktor.datasets.factory import Datasets
+#from tracktor.datasets.factory import Datasets
 from tracktor.datasets.dataloader_correlation import Dataset
 from tracktor.correlation.correlation_head import CorrelationHead
 
@@ -47,12 +47,12 @@ def my_main(_config, correlation):
 
     #db_train = Datasets(correlation['db_train'], correlation['dataloader'])
     h5_file = osp.join(cfg.DATA_DIR, 'correlation_dataset', correlation['db_train'])
-    db_train = Dataset(h5_file, ['MOT17-02', 'MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10','MOT17-11'])
+    db_train = Dataset(h5_file, ['MOT17-02', 'MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10','MOT17-11', 'MOT20-01', 'MOT20-02', 'MOT20-03', 'MOT20-05'])
     db_train = DataLoader(db_train, batch_size=512, shuffle=True)
 
     if correlation['db_val']:
         h5_file_val = osp.join(cfg.DATA_DIR, 'correlation_dataset', correlation['db_val'])
-        db_val = Dataset(h5_file_val, ['MOT17-13'])
+        db_val = Dataset(h5_file_val, ['MOT17-13'])    boxes[int(row[0])][int(row[1])] = bb
         # Stick to batchsize = 1, plot images is not vectorized yet
         db_val = DataLoader(db_val, batch_size=1)
         #db_val = Datasets(correlation['db_val'])
@@ -74,7 +74,6 @@ def my_main(_config, correlation):
     ##################
     print("[*] Solving ...")
 
-    #TODO change scheduling of training and adapt to our patch based correlation approach
     iters_per_epoch = len(db_train)
     max_epochs = 500
     start_decrease = 150

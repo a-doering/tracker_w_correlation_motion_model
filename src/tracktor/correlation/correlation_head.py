@@ -45,7 +45,7 @@ class CorrelationHead(nn.Module):
 
     def losses(self, batch, loss):
 
-        patch1, patch2, gt_boxes, prev_boxes, _, _, _ = batch
+        patch1, patch2, gt_boxes, prev_boxes, _, _, _ , imWidth, imHeight = batch
 
         patch1 = Variable(patch1).cuda()
         patch2 = Variable(patch2).cuda()
@@ -63,6 +63,7 @@ class CorrelationHead(nn.Module):
         boxes_deltas = self.forward(patch1, patch2)
 
         pred_boxes = self.roi_heads.box_coder.decode(boxes_deltas, [prev_boxes]).squeeze(dim=1)
+        #TODO check if this works like (imWidth[0],  imHeight[0])
         #pred_boxes = resize_boxes(pred_boxes, self.preprocessed_images.image_sizes[0], self.original_image_sizes[0])
 
         if loss == "GIoU":

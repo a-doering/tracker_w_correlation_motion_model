@@ -4,7 +4,7 @@ import numpy as np
 
 class Dataset(torch.utils.data.Dataset):
 
-    def __init__(self, h5_path, sequences=['MOT17-02', 'MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10','MOT17-11', 'MOT17-13']):
+    def __init__(self, h5_path, sequences=['MOT20-01', 'MOT20-02', 'MOT20-03', 'MOT20-05','MOT17-02', 'MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10','MOT17-11', 'MOT17-13']):
 
         self.train_folders = sequences
         self.file = h5py.File(h5_path, "r")
@@ -39,4 +39,7 @@ class Dataset(torch.utils.data.Dataset):
         im_name_prev = self.file[f"/{seq}/names"][index]
         im_name_current = self.file[f"/{seq}/names_next"][index]
 
-        return fmap_prev, fmap_enlarged, gt_boxes, boxes, boxes_enlarged, im_name_prev, im_name_current
+        imWidth = self.file[f"/{seq}/imWidth"]
+        imHeight = self.file[f"/{seq}/imHeight"]
+
+        return fmap_prev, fmap_enlarged, gt_boxes, boxes, boxes_enlarged, im_name_prev, im_name_current, imWidth, imHeight
