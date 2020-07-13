@@ -36,14 +36,18 @@ def clip_boxes_to_image(bb, size):
     bb[3] = np.clip(bb[3], 0, height)
     return bb
 
-def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, verbose=False):
+def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, append=False, verbose=False):
     """Create a dataset for the correlation layer"""
     # Open hdf5 file and create arrays
     print(100*'#')
     filename = 'correlation_dataset_{:.2f}_{:.2f}.hdf5'.format(boxes_enlargement_factor, vis_threshold)
     h5_file = osp.join(cfg.DATA_DIR, 'correlation_dataset', 'dataset_more_info', filename)
 
-    h5 = h5py.File(h5_file, mode='w')
+    if append:
+        h5 = h5py.File(h5_file, mode='a')
+    else:
+        h5 = h5py.File(h5_file, mode='w')
+
     for seq in sequences:
 
         print(100*'#')
@@ -54,6 +58,15 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, verbose=F
             mot_dir = osp.join(cfg.DATA_DIR, 'MOT20', 'train')
         else: 
             raise Exception("No valid MOT challenge.")
+
+        # We want to overwrite all sequences listed
+        # Mostly doing appending if the previous sequence has not finished during the creation
+        if append:
+            print("Keys in the sequence: {}".format(h5.keys()))
+            if seq in h5.keys():
+                del h5[seq]
+                print("Keys in sequence after deletion: {}".format(h5.keys()))
+        
 
         seq_im_dir = osp.join(mot_dir, seq)
         gt_file = osp.join(mot_dir, seq, 'gt', 'gt.txt')
@@ -214,13 +227,14 @@ obj_detect.cuda()
 print('Model loaded!')
 
 # Hardcoded loader for MOT17
-sequences = ['MOT20-01', 'MOT20-02', 'MOT20-03', 'MOT20-05' ,'MOT17-02','MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-11', 'MOT17-13']
+# sequences = ['MOT20-01', 'MOT20-02', 'MOT20-03', 'MOT20-05' ,'MOT17-02','MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-11', 'MOT17-13']
+sequences = ['MOT20-01', 'MOT20-02', 'MOT20-03', 'MOT17-02','MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-11', 'MOT17-13']#'MOT20-05', 
 
 # Hardcoded parameters
 vis_threshold = [0.5]
-boxes_enlargement_factor = [1.2, 1.5, 1.0, 1.05, 1.1,1.3,2.0]#[1.0,1.05, 1.1, 1.2,1.3,1.5,2.0]
+boxes_enlargement_factor = [1.2]#, 1.5, 1.0, 1.05, 1.1,1.3,2.0]#[1.0,1.05, 1.1, 1.2,1.3,1.5,2.0]
 
 
 for b in boxes_enlargement_factor:
     for v in vis_threshold:
-        create_dataset(b,v, sequences, verbose=False)
+        create_dataset(b,v, sequences, append=False, verbose=False)
