@@ -82,11 +82,6 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, append=Fa
         imWidth = int(config['Sequence']['imWidth'])
         imHeight = int(config['Sequence']['imHeight'])
 
-        # Truncate sequence length
-        if truncate and seqLength > 1050:
-            seqLength = seqLength % 1000
-            print("Seqlength truncated to {} save memory.".format(seqLength))
-
         # Constructing tracks, one sample per frame. Access boxes like: boxes[frame][id]
         total = {}
         boxes = {}
@@ -126,6 +121,11 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, append=Fa
 
             total[i] = sample
 
+        # Truncate sequence length
+        if truncate and seqLength > 1050:
+            seqLength = seqLength % 1000
+            print("Seqlength truncated to {} save memory.".format(seqLength))
+
         # Find all ids that are in this frame and next
         id_in_frame_and_next = {}
         for i in range(1, seqLength):
@@ -146,9 +146,8 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, append=Fa
         h5_dataset_5 = group.create_dataset("boxes_enlarged",(num_pairs, 4), dtype=np.float32)
         h5_dataset_6 = group.create_dataset("names",(num_pairs,),dtype=h5py.special_dtype(vlen=str))
         h5_dataset_7 = group.create_dataset("names_next",(num_pairs,),dtype=h5py.special_dtype(vlen=str))
-        # Fill with data here
-        h5_dataset_8 = group.create_dataset("imWidth", data = np.array(imWidth, dtype=np.int32), dtype=np.int32)
-        h5_dataset_9 = group.create_dataset("imHeight",data = np.array(imHeight, dtype=np.int32), dtype=np.int32)
+        h5_dataset_8 = group.create_dataset("preprocessed_image_sizes", (num_pairs, 2), dtype=np.float32)
+        h5_dataset_9 = group.create_dataset("original_image_sizes",(num_pairs, 2), dtype=np.float32)
         
         pairs_stored = 0
         # Create feature maps
@@ -207,7 +206,15 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, append=Fa
 
             h5_dataset_1[pairs_stored:pairs_stored+pairs_in_frame] = prev_7x7_features.data.cpu().numpy()
             h5_dataset_2[pairs_stored:pairs_stored+pairs_in_frame] = current_7x7_features.data.cpu().numpy()
+            h5_dataset_8[pairs_stored:pairs_stored+pairs_in_frame] = obj_detect.preprocessed_images.image_sizes
+            h5_dataset_9[pairs_stored:pairs_stored+pairs_in_frame] = obj_detect.original_image_sizes
 
+            if i%100 == 0:
+                print("Image sizes: ")
+                print(40*'-')
+                print(obj_detect.preprocessed_images.image_sizes)
+                print(40*'-')
+                print(obj_detect.original_image_sizes)
 
             pairs_stored += pairs_in_frame
             if verbose:
@@ -233,11 +240,11 @@ print('Model loaded!')
 
 # Hardcoded loader for MOT17
 # sequences = ['MOT20-01', 'MOT20-02', 'MOT20-03', 'MOT20-05' ,'MOT17-02','MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-11', 'MOT17-13']
-sequences = ['MOT20-01', 'MOT20-02', 'MOT20-03', 'MOT20-05','MOT17-02','MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-11', 'MOT17-13']
+sequences = ['MOT20-01','MOT20-02', 'MOT20-03', 'MOT20-05','MOT17-02','MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-11', 'MOT17-13']
 
 # Hardcoded parameters
 vis_threshold = [0.5]
-boxes_enlargement_factor = [1.2, 1.5, 1.0]#, 1.5, 1.0, 1.05, 1.1,1.3,2.0]#[1.0,1.05, 1.1, 1.2,1.3,1.5,2.0]
+boxes_enlargement_factor = [1.5]#, 2.0, 1.2]#, 1.5, 1.0, 1.05, 1.1,1.3,2.0]#[1.0,1.05, 1.1, 1.2,1.3,1.5,2.0]
 
 
 for b in boxes_enlargement_factor:

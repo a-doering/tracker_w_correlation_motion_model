@@ -39,7 +39,7 @@ class Dataset(torch.utils.data.Dataset):
         im_name_prev = self.file[f"/{seq}/names"][index]
         im_name_current = self.file[f"/{seq}/names_next"][index]
 
-        imWidth = np.array(self.file[f"/{seq}/imWidth"])
-        imHeight = np.array(self.file[f"/{seq}/imHeight"])
+        preprocessed_image_sizes = self.file[f"/{seq}/preprocessed_image_sizes"][index]
+        original_image_sizes = self.file[f"/{seq}/original_image_sizes"][index]
 
-        return fmap_prev, fmap_enlarged, gt_boxes, boxes, boxes_enlarged, im_name_prev, im_name_current, imWidth, imHeight
+        return fmap_prev, fmap_enlarged, gt_boxes, boxes, boxes_enlarged, im_name_prev, im_name_current, preprocessed_image_sizes, original_image_sizes

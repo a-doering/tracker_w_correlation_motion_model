@@ -197,7 +197,7 @@ class Solver(object):
 						
 	
 			# VALIDATION
-			if val_loader and log_nth and epoch % 1 == 0:
+			if val_loader and log_nth and epoch % 5 == 0:
 				print("Validating...")
 				model.eval()
 				# mot_accums = []
