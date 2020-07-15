@@ -26,7 +26,7 @@ class Solver(object):
 						 "momentum":0}
 	default_optim_args = {"lr": 1e-4}
 
-	def __init__(self, output_dir, tb_dir, optim='SGD', optim_args={}, lr_scheduler_lambda=None):
+	def __init__(self, output_dir, optim='SGD', optim_args={}, lr_scheduler_lambda=None):
 
 		optim_args_merged = self.default_optim_args.copy()
 		optim_args_merged.update(optim_args)
@@ -40,16 +40,16 @@ class Solver(object):
 
 		self.lr_scheduler_lambda = lr_scheduler_lambda
 
-		self.output_dir = output_dir
-		self.tb_dir = tb_dir
-		# Simply put '_val' at the end to save the summaries from the validation set
-		# self.tb_val_dir = tb_dir + '_val'
-		if not os.path.exists(self.output_dir):
-			os.makedirs(self.output_dir)
+		self.checkpoints_dir = os.path.join(output_dir, "checkpoints")
+		self.images_dir = os.path.join(output_dir, "validation_images")
+		self.tb_dir = output_dir
+		
+		if not os.path.exists(self.checkpoints_dir):
+			os.makedirs(self.checkpoints_dir)
+		if not os.path.exists(self.images_dir):
+			os.makedirs(self.images_dir)
 		if not os.path.exists(self.tb_dir):
 			os.makedirs(self.tb_dir)
-		# if not os.path.exists(self.tb_val_dir):
-		# 	os.makedirs(self.tb_val_dir)
 
 		self.tracker = None
 		self._reset_histories()
@@ -91,7 +91,7 @@ class Solver(object):
 
 	def snapshot(self, model, iter):
 		filename = model.name + '_iter_{:d}'.format(iter) + '.pth'
-		filename = os.path.join(self.output_dir, filename)
+		filename = os.path.join(self.checkpoints_dir, filename)
 		parameters = model.state_dict()
 		for k in model.state_dict():
 			if "roi_heads" in k.split("."): del parameters[k]
@@ -101,7 +101,7 @@ class Solver(object):
 		# Delete old snapshots (keep minimum 3 latest)
 		snapshots_iters = []
 
-		onlyfiles = [f for f in os.listdir(self.output_dir) if os.path.isfile(os.path.join(self.output_dir, f))]
+		onlyfiles = [f for f in os.listdir(self.checkpoints_dir) if os.path.isfile(os.path.join(self.checkpoints_dir, f))]
 
 		for f in onlyfiles:
 			if fnmatch.fnmatch(f, 'ResNet_iters_*.pth'):
@@ -111,7 +111,7 @@ class Solver(object):
 
 		for i in range(len(snapshots_iters) - 3):
 			filename = model.name + '_iter_{:d}'.format(snapshots_iters[i]) + '.pth'
-			filename = os.path.join(self.output_dir, filename)
+			filename = os.path.join(self.checkpoints_dir, filename)
 			os.remove(filename)
 
 	def train(self, model, train_loader, val_loader=None, num_epochs=10, log_nth=0, model_args={}):
@@ -229,7 +229,7 @@ class Solver(object):
 						boxes_deltas = model.forward(patch1, patch2)
 						pred_box = model.roi_heads.box_coder.decode(boxes_deltas, [prev_boxes]).squeeze(dim=1)
 
-						prev_image, current_image = plot_boxes_one_pair(batch, (epoch+1) * iter_per_epoch, predictions=pred_box.squeeze(), save=True)
+						prev_image, current_image = plot_boxes_one_pair(batch, (epoch+1) * iter_per_epoch, predictions=pred_box.squeeze(), save=True, output_dir=self.images_dir)
 
 						# img_grid = torchvision.utils.make_grid([prev_image, current_image], padding=20)
 						# self.writer.add_image(image_to_plot, img_grid, (epoch+1) * iter_per_epoch)

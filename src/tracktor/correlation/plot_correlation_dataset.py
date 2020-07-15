@@ -1,4 +1,5 @@
 from os import path as osp
+import os
 
 import numpy as np
 import torch
@@ -23,7 +24,7 @@ def im_name_to_im_path(im_name):
         raise Exception("No valid MOT challenge.")
     return im_path
 
-def plot_boxes_one_pair(sample, step, predictions=None, save=False):
+def plot_boxes_one_pair(sample, step, predictions=None, save=False, output_dir=None):
     """Plot boxes on image"""
     _, _, boxes_gt, boxes, boxes_enlarged, im_name_prev, im_name_current, _, _ = sample
     
@@ -37,7 +38,11 @@ def plot_boxes_one_pair(sample, step, predictions=None, save=False):
     assert im_name_prev.split("_")[-1] == im_name_current.split("_")[-1]
     track_id = im_name_prev.split("_")[-1]
 
-    output_dir = osp.join(cfg.ROOT_DIR, "output", "dataset_test") if save else None
+    if save:
+        if output_dir is None:
+            output_dir = osp.join(cfg.ROOT_DIR, "output", "validation_images")
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
 
     #################################        Prev image plotting        #################################
     im_path_prev = im_name_to_im_path(im_name_prev)
