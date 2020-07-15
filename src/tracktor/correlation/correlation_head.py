@@ -63,8 +63,9 @@ class CorrelationHead(nn.Module):
 
         boxes_deltas = self.forward(patch1, patch2)
 
+        prev_boxes = resize_boxes(prev_boxes, original_image_sizes[0], preprocessed_image_sizes[0])
         pred_boxes = self.roi_heads.box_coder.decode(boxes_deltas, [prev_boxes]).squeeze(dim=1)
-        #pred_boxes = resize_boxes(pred_boxes, preprocessed_image_sizes[0], original_image_sizes[0])
+        pred_boxes = resize_boxes(pred_boxes, preprocessed_image_sizes[0], original_image_sizes[0])
 
         if loss == "GIoU":
             total_loss = self.giou_loss(pred_boxes, gt_boxes)

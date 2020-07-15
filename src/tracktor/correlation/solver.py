@@ -10,6 +10,7 @@ import torchvision
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 from torch.optim.lr_scheduler import LambdaLR
+from torchvision.models.detection.transform import resize_boxes
 
 from tracktor.utils import plot_tracks, get_mot_accum, get_overall_results
 from tracktor.frcnn_fpn import FRCNN_FPN
@@ -227,7 +228,9 @@ class Solver(object):
 						patch2 = Variable(batch[1]).cuda()
 						prev_boxes = batch[3].cuda()
 						boxes_deltas = model.forward(patch1, patch2)
+						prev_boxes = resize_boxes(prev_boxes, batch[8][0], batch[7][0])
 						pred_box = model.roi_heads.box_coder.decode(boxes_deltas, [prev_boxes]).squeeze(dim=1)
+						pred_box = resize_boxes(pred_box, batch[7][0], batch[8][0])
 
 						prev_image, current_image = plot_boxes_one_pair(batch, (epoch+1) * iter_per_epoch, predictions=pred_box.squeeze(), save=True, output_dir=self.images_dir)
 

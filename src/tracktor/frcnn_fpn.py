@@ -77,8 +77,9 @@ class FRCNN_FPN(FasterRCNN):
 
         boxes_deltas = self.correlation_head(prev_boxes_features, current_boxes_features)
         
+        prev_boxes = resize_boxes(prev_boxes, self.original_image_sizes[0], self.preprocessed_images.image_sizes[0])
         pred_boxes = self.roi_heads.box_coder.decode(boxes_deltas, [prev_boxes]).squeeze(dim=1)
-        #pred_boxes = resize_boxes(pred_boxes, self.preprocessed_images.image_sizes[0], self.original_image_sizes[0])
+        pred_boxes = resize_boxes(pred_boxes, self.preprocessed_images.image_sizes[0], self.original_image_sizes[0])
 
         return pred_boxes
 
