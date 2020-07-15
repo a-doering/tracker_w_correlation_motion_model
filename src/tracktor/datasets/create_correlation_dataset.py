@@ -186,7 +186,8 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, append=Fa
             # print(names_next)
             boxes = torch.tensor(boxes)
             enlarged_boxes = torch.tensor(enlarged_boxes)
-
+            
+            # Previous image:
             # Load and convert image
             pic = Image.open(osp.join(seq_im_dir, total[i]['im_path'])).convert("RGB")
             img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
@@ -198,6 +199,18 @@ def create_dataset(boxes_enlargement_factor, vis_threshold, sequences, append=Fa
             if verbose:
                 print(img.shape, img.type, img.type())#1,3,1080,1920 ---> yes, torch object        
             obj_detect.load_image(img) # load previous frame
+
+            # Current image:
+            # Load and convert image
+            pic = Image.open(osp.join(seq_im_dir, total[i+1]['im_path'])).convert("RGB")
+            img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
+            img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
+            # Put it from HWC to CHW format
+            img = img.permute((2, 0, 1)).contiguous()
+            img = img.float().div(255)
+            img.unsqueeze_(0)
+            if verbose:
+                print(img.shape, img.type, img.type())#1,3,1080,1920 ---> yes, torch object           
             obj_detect.load_image(img) # load current frame
 
             prev_7x7_features, current_7x7_features = obj_detect.get_feature_patches(boxes, enlarged_boxes)
@@ -240,11 +253,11 @@ print('Model loaded!')
 
 # Hardcoded loader for MOT17
 # sequences = ['MOT20-01', 'MOT20-02', 'MOT20-03', 'MOT20-05' ,'MOT17-02','MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-11', 'MOT17-13']
-sequences = ['MOT20-01','MOT20-02', 'MOT20-03', 'MOT20-05','MOT17-02','MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-11', 'MOT17-13']
+sequences = ['MOT17-13']#['MOT20-01','MOT20-02', 'MOT20-03', 'MOT20-05','MOT17-02','MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10', 'MOT17-11', 'MOT17-13']
 
 # Hardcoded parameters
 vis_threshold = [0.5]
-boxes_enlargement_factor = [1.5]#, 2.0, 1.2]#, 1.5, 1.0, 1.05, 1.1,1.3,2.0]#[1.0,1.05, 1.1, 1.2,1.3,1.5,2.0]
+boxes_enlargement_factor = [1.5]#, 1.5, 1.0, 1.05, 1.1,1.3,2.0]#[1.0,1.05, 1.1, 1.2,1.3,1.5,2.0]
 
 
 for b in boxes_enlargement_factor:
