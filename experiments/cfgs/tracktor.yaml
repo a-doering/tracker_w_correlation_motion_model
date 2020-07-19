@@ -17,7 +17,7 @@ tracktor:
   # obj_detect_weights: output/fpn/res101/mot19_cvpr_train/v1/fpn_1_3.pth
   # obj_detect_config: output/fpn/res101/mot19_cvpr_train/v1/config.yaml
 
-  correlation_weights: output/tracktor/correlation/correlation_head_overfit_10_1.5.model
+  correlation_weights: output/tracktor/correlation/correlation_head_all_mot20_but_13_1.2.model
 
   reid_weights: output/tracktor/reid/res50-mot17-batch_hard/ResNet_iter_25245.pth
   reid_config: output/tracktor/reid/res50-mot17-batch_hard/sacred_config.yaml
@@ -26,11 +26,12 @@ tracktor:
   # compile video with: `ffmpeg -f image2 -framerate 15 -i %06d.jpg -vcodec libx264 -y movie.mp4 -vf scale=320:-1`
   write_images: False
   # dataset (look into tracker/datasets/factory.py)
-  dataset: mot17_10_FRCNN17
+  dataset: mot17_13_FRCNN17
   # [start percentage, end percentage], e.g., [0.0, 0.5] for train and [0.75, 1.0] for val split.
   frame_split: [0.0, 1.0]
 
   tracker:
+    write_debug_images: True
     # FRCNN score threshold for detections
     detection_person_thresh: 0.5
     # FRCNN score threshold for keeping the track alive
@@ -54,9 +55,9 @@ tracktor:
     # How much last appearance features are to keep
     max_features_num: 10
     # Regression head with correlation layer
-    use_correlation: True
+    use_correlation: False
     # Do camera motion compensation
-    do_align: False
+    do_align: True
     # Which warp mode to use (cv2.MOTION_EUCLIDEAN, cv2.MOTION_AFFINE, ...)
     warp_mode: cv2.MOTION_EUCLIDEAN
     # maximal number of iterations (original 50)

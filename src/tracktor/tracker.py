@@ -8,6 +8,7 @@ from scipy.optimize import linear_sum_assignment
 import cv2
 
 from .utils import bbox_overlaps, warp_pos, get_center, get_height, get_width, make_pos
+from .correlation.plot_correlation_dataset import plot_tracktor_image
 
 from torchvision.ops.boxes import clip_boxes_to_image, nms
 
@@ -34,6 +35,7 @@ class Tracker:
 		self.reid_iou_threshold = tracker_cfg['reid_iou_threshold']
 		self.do_align = tracker_cfg['do_align']
 		self.motion_model_cfg = tracker_cfg['motion_model']
+		self.write_debug_images = tracker_cfg['write_debug_images']
 
 		self.warp_mode = eval(tracker_cfg['warp_mode'])
 		self.number_of_iterations = tracker_cfg['number_of_iterations']
@@ -90,6 +92,7 @@ class Tracker:
 			correlated_boxes = self.obj_detect.predict_with_correlation(prev_boxes, enlarged_boxes)
 			correlated_boxes = clip_boxes_to_image(correlated_boxes, blob['img'].shape[-2:])
 			positions = correlated_boxes
+			if self.write_debug_images: plot_tracktor_image(blob, positions, [t.id for t in self.tracks], "2_after_correlation")
 
 		boxes, scores = self.obj_detect.predict_boxes(positions)
 		pos = clip_boxes_to_image(boxes, blob['img'].shape[-2:])
@@ -324,7 +327,9 @@ class Tracker:
 		if len(self.tracks):
 			# align
 			if self.do_align:
+				if self.write_debug_images: plot_tracktor_image(blob, self.get_pos(), [t.id for t in self.tracks], "0_before_align")
 				self.align(blob)
+			if self.write_debug_images: plot_tracktor_image(blob, self.get_pos(), [t.id for t in self.tracks], "1_before_regression")
 
 			# apply motion model
 			if self.motion_model_cfg['enabled']:
@@ -333,6 +338,8 @@ class Tracker:
 
 			# regress
 			person_scores = self.regress_tracks(blob)
+
+			if self.write_debug_images: plot_tracktor_image(blob, self.get_pos(), [t.id for t in self.tracks], "3_after_regression")
 
 			if len(self.tracks):
 				# create nms input

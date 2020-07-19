@@ -51,7 +51,8 @@ def plot_boxes_one_pair(sample, step, predictions=None, save=False, output_dir=N
     boxes_to_print = [boxes, boxes_enlarged]
     output_name = osp.join(output_dir, str(step) + "_" + im_name_current + "_prev.jpg") if output_dir else None
 
-    prev_image = plot_image(im_path_prev, boxes_to_print, cmap, linestyle, track_id, output_name)
+    prev_image = plot_image(im_path_prev, boxes_to_print, cmap, track_id, output_name, linestyle)
+    if save: print(f"Saved image {output_name}")
 
     #################################       Current image plotting       #################################
     im_path_current = im_name_to_im_path(im_name_current)
@@ -64,13 +65,32 @@ def plot_boxes_one_pair(sample, step, predictions=None, save=False, output_dir=N
         linestyle = linestyle[:-1]
     output_name = osp.join(output_dir, str(step) + "_" + im_name_current + ".jpg") if output_dir else None
 
-    current_image = plot_image(im_path_current, boxes_to_print, cmap, linestyle, track_id, output_name)
+    current_image = plot_image(im_path_current, boxes_to_print, cmap, track_id, output_name, linestyle)
+    if save: print(f"Saved image {output_name}")
 
     return prev_image, current_image
 
-def plot_image(base_im_path, boxes_to_print, cmap, linestyle, track_id, output_name=None):
-    image = cv2.imread(base_im_path)
-    image = image[:, :, (2, 1, 0)]
+def plot_tracktor_image(blob, tracks, ids, name):
+    image = blob['img'].squeeze().permute(1, 2, 0).numpy()
+
+    splited_path = blob['img_path'][0].split("/")
+    seq_name = splited_path[-3]
+    output_dir = osp.join(cfg.ROOT_DIR, "output", "debug_images", seq_name)
+    if not osp.exists(output_dir):
+        os.makedirs(output_dir)
+
+    img_name = splited_path[-1].split(".")
+    file_name = osp.join(output_dir, img_name[0] + "_" + name + "." + img_name[-1])
+
+    cmap = ['r'] * len(ids)
+
+    plot_image(image, tracks, cmap, ids, file_name)
+
+def plot_image(base_im, boxes_to_print, cmap, track_id, output_name=None, linestyle=None):
+    image = base_im
+    if isinstance(image, str):
+        image = cv2.imread(image)
+        image = image[:, :, (2, 1, 0)]
 
     height, width = image.shape[:2]
 
@@ -81,7 +101,13 @@ def plot_image(base_im_path, boxes_to_print, cmap, linestyle, track_id, output_n
     fig.add_axes(ax)
     ax.imshow(image)
 
-    for i, (box, c, style) in enumerate(zip(boxes_to_print, cmap, linestyle)):
+    if linestyle is None:
+        linestyle = ['solid'] * len(boxes_to_print)
+
+    if isinstance(track_id, int):
+        track_id = [track_id] + [None] * len(boxes_to_print) - 1
+
+    for i, (box, c, style, t_id) in enumerate(zip(boxes_to_print, cmap, linestyle, track_id)):
         ax.add_patch(
             plt.Rectangle(
                 (box[0], box[1]),
@@ -92,8 +118,8 @@ def plot_image(base_im_path, boxes_to_print, cmap, linestyle, track_id, output_n
                 linestyle=style
             ))
 
-        if i == 0:
-            ax.annotate(track_id, (box[0] + (box[2] - box[0]) / 2.0, box[1] + (box[3] - box[1]) / 2.0),
+        if t_id is not None:
+            ax.annotate(t_id, (box[0] + (box[2] - box[0]) / 2.0, box[1] + (box[3] - box[1]) / 2.0),
                     color='k', weight='bold', fontsize=18, ha='center', va='center')
 
     plt.axis('off')
@@ -105,7 +131,6 @@ def plot_image(base_im_path, boxes_to_print, cmap, linestyle, track_id, output_n
 
     if output_name:
         plt.savefig(output_name, dpi=100)
-        print(f"Saved image {output_name}")
 
     plt.close()
 

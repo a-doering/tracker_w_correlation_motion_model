@@ -45,7 +45,7 @@ def my_main(_config, correlation):
     print("[*] Initializing Dataloader")
 
     sequences = ['MOT17-02', 'MOT17-04', 'MOT17-05', 'MOT17-09', 'MOT17-10','MOT17-11', 'MOT17-13', 'MOT20-01','MOT20-02', 'MOT20-03', 'MOT20-05']
-    training_sequences = correlation['train_seqs']
+    training_sequences = sequences if correlation['train_seqs'] == "all" else correlation['train_seqs']
     val_sequences = correlation['val_seqs']
     if not training_sequences:
         training_sequences = [seq for seq in sequences if seq not in val_sequences]
@@ -53,9 +53,9 @@ def my_main(_config, correlation):
     #db_train = Datasets(correlation['db_train'], correlation['dataloader'])
     h5_file = osp.join(cfg.DATA_DIR, 'correlation_dataset', correlation['db_train'])
     db_train = Dataset(h5_file, training_sequences)
-    db_train = DataLoader(db_train, batch_size=512, shuffle=True)
+    db_train = DataLoader(db_train, batch_size=1024, shuffle=True)
 
-    if correlation['db_val']:
+    if correlation['db_val'] and val_sequences:
         h5_file_val = osp.join(cfg.DATA_DIR, 'correlation_dataset', correlation['db_val'])
         db_val = Dataset(h5_file_val, val_sequences)
         # Stick to batchsize = 1, plot images is not vectorized yet
@@ -80,8 +80,8 @@ def my_main(_config, correlation):
     print("[*] Solving ...")
 
     iters_per_epoch = len(db_train)
-    max_epochs = 200
-    start_decrease = 60
+    max_epochs = 100
+    start_decrease = 20
     # we want to keep lr until iter 15000 and from there to iter 25000 a exponential decay
     l = eval(f"lambda epoch: 1 if epoch < {start_decrease} else 0.001**((epoch - {start_decrease})/({max_epochs}-{start_decrease}))")
     solver = Solver(output_dir, lr_scheduler_lambda=l)
