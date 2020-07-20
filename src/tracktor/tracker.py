@@ -82,14 +82,19 @@ class Tracker:
 			))
 		self.track_num += num_new
 
-	def regress_tracks(self, blob):
+	def regress_tracks(self, blob, prev_boxes):
 		"""Regress the position of the tracks and also checks their scores."""
-		prev_boxes = self.get_pos()
-		enlarged_boxes = clip_boxes_to_image(self.enlarge_boxes(prev_boxes), blob['img'].shape[-2:])
+		if prev_boxes is None:
+			prev_boxes = self.get_pos()
+			boxes_to_shift = prev_boxes
+			enlarged_boxes = clip_boxes_to_image(self.enlarge_boxes(boxes_to_shift), blob['img'].shape[-2:])
+		else:
+			boxes_to_shift = self.get_pos()
+			enlarged_boxes = clip_boxes_to_image(self.enlarge_boxes(boxes_to_shift), blob['img'].shape[-2:])
 		positions = enlarged_boxes
 
 		if self.use_correlation:
-			correlated_boxes = self.obj_detect.predict_with_correlation(prev_boxes, enlarged_boxes)
+			correlated_boxes = self.obj_detect.predict_with_correlation(prev_boxes, enlarged_boxes, boxes_to_shift)
 			correlated_boxes = clip_boxes_to_image(correlated_boxes, blob['img'].shape[-2:])
 			positions = correlated_boxes
 			if self.write_debug_images: plot_tracktor_image(blob, positions, [t.id for t in self.tracks], "2_after_correlation")
@@ -213,7 +218,9 @@ class Tracker:
 
 	def align(self, blob):
 		"""Aligns the positions of active and inactive tracks depending on camera motion."""
+		prev_boxes = None
 		if self.im_index > 0:
+			prev_boxes = self.get_pos()
 			im1 = np.transpose(self.last_image.cpu().numpy(), (1, 2, 0))
 			im2 = np.transpose(blob['img'][0].cpu().numpy(), (1, 2, 0))
 			im1_gray = cv2.cvtColor(im1, cv2.COLOR_RGB2GRAY)
@@ -235,6 +242,7 @@ class Tracker:
 				for t in self.tracks:
 					for i in range(len(t.last_pos)):
 						t.last_pos[i] = warp_pos(t.last_pos[i], warp_matrix)
+		return prev_boxes
 
 	def motion_step(self, track):
 		"""Updates the given track's position by one step based on track.last_v"""
@@ -325,10 +333,11 @@ class Tracker:
 		num_tracks = 0
 		nms_inp_reg = torch.zeros(0).cuda()
 		if len(self.tracks):
+			prev_boxes = None
 			# align
 			if self.do_align:
 				if self.write_debug_images: plot_tracktor_image(blob, self.get_pos(), [t.id for t in self.tracks], "0_before_align")
-				self.align(blob)
+				prev_boxes = self.align(blob)
 			if self.write_debug_images: plot_tracktor_image(blob, self.get_pos(), [t.id for t in self.tracks], "1_before_regression")
 
 			# apply motion model
@@ -337,7 +346,7 @@ class Tracker:
 				self.tracks = [t for t in self.tracks if t.has_positive_area()]
 
 			# regress
-			person_scores = self.regress_tracks(blob)
+			person_scores = self.regress_tracks(blob, prev_boxes)
 
 			if self.write_debug_images: plot_tracktor_image(blob, self.get_pos(), [t.id for t in self.tracks], "3_after_regression")
 

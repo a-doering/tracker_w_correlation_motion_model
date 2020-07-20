@@ -71,14 +71,14 @@ class FRCNN_FPN(FasterRCNN):
         pred_scores = pred_scores[:, 1:].squeeze(dim=1).detach()
         return pred_boxes, pred_scores
 
-    def predict_with_correlation(self, prev_boxes, current_boxes):
+    def predict_with_correlation(self, prev_boxes, current_boxes, boxes_to_shift):
 
         prev_boxes_features, current_boxes_features = self.get_feature_patches(prev_boxes, current_boxes)
 
         boxes_deltas = self.correlation_head(prev_boxes_features, current_boxes_features)
         
-        prev_boxes = resize_boxes(prev_boxes, self.original_image_sizes[0], self.preprocessed_images.image_sizes[0])
-        pred_boxes = self.roi_heads.box_coder.decode(boxes_deltas, [prev_boxes]).squeeze(dim=1)
+        boxes_to_shift = resize_boxes(boxes_to_shift, self.original_image_sizes[0], self.preprocessed_images.image_sizes[0])
+        pred_boxes = self.roi_heads.box_coder.decode(boxes_deltas, [boxes_to_shift]).squeeze(dim=1)
         pred_boxes = resize_boxes(pred_boxes, self.preprocessed_images.image_sizes[0], self.original_image_sizes[0])
 
         return pred_boxes

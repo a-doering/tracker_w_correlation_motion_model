@@ -3,8 +3,8 @@ correlation:
   module_name: correlation
   description:
   seed: 12345
-  db_train: dataset_more_info/correlation_dataset_1.50_0.50.hdf5
-  db_val: dataset_more_info/correlation_dataset_1.50_0.50.hdf5
+  db_train: dataset_more_info/after_mot20_after_combination_corrupted/correlation_dataset_1.50_0.50.hdf5
+  db_val: dataset_more_info/after_mot20_after_combination_corrupted/correlation_dataset_1.50_0.50.hdf5
 
   train_seqs: False
   val_seqs: ['MOT17-13']
