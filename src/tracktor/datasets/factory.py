@@ -1,6 +1,7 @@
 
 from .mot_wrapper import MOT17Wrapper, MOT19Wrapper, MOT17LOWFPSWrapper, MOT20Wrapper
 from .mot_reid_wrapper import MOTreIDWrapper
+from .mot_correlation_wrapper import MOTcorrelationWrapper
 from .mot15_wrapper import MOT15Wrapper
 from .marcuhmot import MarCUHMOT
 
@@ -34,6 +35,10 @@ for split in ['1', '2', '3', '5', '6', '10', '15', '30']:
 for split in ['train', 'small_val', 'small_train']:
     name = f'mot_reid_{split}'
     _sets[name] = (lambda *args, split=split: MOTreIDWrapper(split, *args))
+
+for split in ['train', 'small_val', 'small_train']:
+    name = f'mot_correlation_{split}'
+    _sets[name] = (lambda *args, split=split: MOTcorrelationWrapper(split, *args))
 
 for split in ['PETS09-S2L1', 'TUD-Stadtmitte', 'TUD-Campus', 'train', 'test', 'last3train']:
     name = f'mot15_{split}'

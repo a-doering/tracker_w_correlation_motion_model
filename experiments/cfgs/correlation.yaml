@@ -1,0 +1,38 @@
+correlation:
+  name: test
+  module_name: correlation
+  description:
+  seed: 12345
+  db_train: dataset_more_info/after_mot20_after_combination_corrupted/correlation_dataset_1.50_0.50.hdf5
+  db_val: dataset_more_info/after_mot20_after_combination_corrupted/correlation_dataset_1.50_0.50.hdf5
+
+  train_seqs: False
+  val_seqs: ['MOT17-13']
+
+  load_from_rcnn: true
+  rcnn_weights: output/faster_rcnn_fpn_training_mot_17/model_epoch_27.model
+
+  model_args:
+    # Recommended for loss: GIoU
+    loss: fasterRCNN
+
+  solver:
+    optim: Adam
+    optim_args:
+      lr: 0.001
+      weight_decay: 0.0000
+
+  dataloader:
+    # all targets with visibility lower than this are filtered out, for kitti set it to
+    # a sequence with maximal [truncation, occlusion] levels
+    vis_threshold: 0.5
+    # Enlargement of bounding boxes in all dimensions. 
+    # Will be truncated to not be out of image.
+    boxes_enlargement_factor: 1.2
+    # Number of frames apart for the pairs in case the next detection 
+    #is not in next frame. 1 means next frame
+    frames_apart: 1
+    #TODO check image shape, also move out of config
+    image_shape:
+     - 1080
+     - 1920

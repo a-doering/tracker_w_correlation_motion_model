@@ -8,6 +8,7 @@ from scipy.optimize import linear_sum_assignment
 import cv2
 
 from .utils import bbox_overlaps, warp_pos, get_center, get_height, get_width, make_pos
+from .correlation.plot_correlation_dataset import plot_tracktor_image
 
 from torchvision.ops.boxes import clip_boxes_to_image, nms
 
@@ -27,12 +28,14 @@ class Tracker:
 		self.boxes_enlargement_factor = tracker_cfg['boxes_enlargement_factor']
 		self.public_detections = tracker_cfg['public_detections']
 		self.inactive_patience = tracker_cfg['inactive_patience']
+		self.use_correlation = tracker_cfg['use_correlation']
 		self.do_reid = tracker_cfg['do_reid']
 		self.max_features_num = tracker_cfg['max_features_num']
 		self.reid_sim_threshold = tracker_cfg['reid_sim_threshold']
 		self.reid_iou_threshold = tracker_cfg['reid_iou_threshold']
 		self.do_align = tracker_cfg['do_align']
 		self.motion_model_cfg = tracker_cfg['motion_model']
+		self.write_debug_images = tracker_cfg['write_debug_images']
 
 		self.warp_mode = eval(tracker_cfg['warp_mode'])
 		self.number_of_iterations = tracker_cfg['number_of_iterations']
@@ -79,13 +82,24 @@ class Tracker:
 			))
 		self.track_num += num_new
 
-	def regress_tracks(self, blob):
+	def regress_tracks(self, blob, prev_boxes):
 		"""Regress the position of the tracks and also checks their scores."""
-		pos = self.get_pos()
+		if prev_boxes is None:
+			prev_boxes = self.get_pos()
+			boxes_to_shift = prev_boxes
+			enlarged_boxes = clip_boxes_to_image(self.enlarge_boxes(boxes_to_shift), blob['img'].shape[-2:])
+		else:
+			boxes_to_shift = self.get_pos()
+			enlarged_boxes = clip_boxes_to_image(self.enlarge_boxes(boxes_to_shift), blob['img'].shape[-2:])
+		positions = enlarged_boxes
 
-		# regress the enlarged bounding boxes
-		enlarged_boxes = clip_boxes_to_image(self.enlarge_boxes(pos), blob['img'].shape[-2:])
-		boxes, scores = self.obj_detect.predict_boxes(enlarged_boxes)
+		if self.use_correlation:
+			correlated_boxes = self.obj_detect.predict_with_correlation(prev_boxes, enlarged_boxes, boxes_to_shift)
+			correlated_boxes = clip_boxes_to_image(correlated_boxes, blob['img'].shape[-2:])
+			positions = correlated_boxes
+			if self.write_debug_images: plot_tracktor_image(blob, positions, [t.id for t in self.tracks], "2_after_correlation")
+
+		boxes, scores = self.obj_detect.predict_boxes(positions)
 		pos = clip_boxes_to_image(boxes, blob['img'].shape[-2:])
 
 		s = []
@@ -204,7 +218,9 @@ class Tracker:
 
 	def align(self, blob):
 		"""Aligns the positions of active and inactive tracks depending on camera motion."""
+		prev_boxes = None
 		if self.im_index > 0:
+			prev_boxes = self.get_pos()
 			im1 = np.transpose(self.last_image.cpu().numpy(), (1, 2, 0))
 			im2 = np.transpose(blob['img'][0].cpu().numpy(), (1, 2, 0))
 			im1_gray = cv2.cvtColor(im1, cv2.COLOR_RGB2GRAY)
@@ -226,6 +242,7 @@ class Tracker:
 				for t in self.tracks:
 					for i in range(len(t.last_pos)):
 						t.last_pos[i] = warp_pos(t.last_pos[i], warp_matrix)
+		return prev_boxes
 
 	def motion_step(self, track):
 		"""Updates the given track's position by one step based on track.last_v"""
@@ -255,19 +272,20 @@ class Tracker:
 					self.motion_step(t)
 
 	def enlarge_boxes(self, boxes):
+		big_boxes = boxes.clone()
 		"""Enlarges bounding box widht and height by some factor."""
 		if self.boxes_enlargement_factor > 1.0:
 			delta = (self.boxes_enlargement_factor - 1) / 2
 
-			width_delta = (boxes[:, 2] - boxes[:, 0]) * delta
-			height_delta = (boxes[:, 3] - boxes[:, 1]) * delta
+			width_delta = (big_boxes[:, 2] - big_boxes[:, 0]) * delta
+			height_delta = (big_boxes[:, 3] - big_boxes[:, 1]) * delta
 
-			boxes[:, 0] -= width_delta
-			boxes[:, 1] -= height_delta
-			boxes[:, 2] += width_delta
-			boxes[:, 3] += height_delta
+			big_boxes[:, 0] -= width_delta
+			big_boxes[:, 1] -= height_delta
+			big_boxes[:, 2] += width_delta
+			big_boxes[:, 3] += height_delta
 
-		return boxes
+		return big_boxes
 
 	def step(self, blob):
 		"""This function should be called every timestep to perform tracking with a blob
@@ -315,9 +333,12 @@ class Tracker:
 		num_tracks = 0
 		nms_inp_reg = torch.zeros(0).cuda()
 		if len(self.tracks):
+			prev_boxes = None
 			# align
 			if self.do_align:
-				self.align(blob)
+				if self.write_debug_images: plot_tracktor_image(blob, self.get_pos(), [t.id for t in self.tracks], "0_before_align")
+				prev_boxes = self.align(blob)
+			if self.write_debug_images: plot_tracktor_image(blob, self.get_pos(), [t.id for t in self.tracks], "1_before_regression")
 
 			# apply motion model
 			if self.motion_model_cfg['enabled']:
@@ -325,7 +346,9 @@ class Tracker:
 				self.tracks = [t for t in self.tracks if t.has_positive_area()]
 
 			# regress
-			person_scores = self.regress_tracks(blob)
+			person_scores = self.regress_tracks(blob, prev_boxes)
+
+			if self.write_debug_images: plot_tracktor_image(blob, self.get_pos(), [t.id for t in self.tracks], "3_after_regression")
 
 			if len(self.tracks):
 				# create nms input
