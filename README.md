@@ -1,96 +1,80 @@
-# Tracking without bells and whistles
+# Extending Tracktor++ with Correlation Motion Model
+This is en extension of [Tracktor++](https://git.io/fjQr8) of the paper ["Tracking without bells and whistles"](https://arxiv.org/pdf/1903.05625.pdf), a multiple-object tracker that uses object detectors for tracking. Our extension adds a correlation motion model to correlate the feature patches of two frames. [Here](https://youtu.be/NQQlPNUhIrY) is a video about our project.
 
-This repository provides the implementation of our paper **Tracking without bells and whistles** (Philipp Bergmann, [Tim Meinhardt](https://dvl.in.tum.de/team/meinhardt/), [Laura Leal-Taixe](https://dvl.in.tum.de/team/lealtaixe/)) [https://arxiv.org/abs/1903.05625]. This branch includes an updated version of Tracktor for PyTorch 1.3 with an improved object detector. The original results of the paper were produced with the `iccv_19` branch.
+## Motivation
+ Bergmann, Meinhardt and Leal-Taixé assume little displacement of a person from frame to frame, which is not the case for:
 
-In addition to our supplementary document, we provide an illustrative [web-video-collection](https://vision.in.tum.de/webshare/u/meinhard/tracking_wo_bnw-supp_video_collection.zip). The collection includes examplary Tracktor++ tracking results and multiple video examples to accompany our analysis of state-of-the-art tracking methods.
+- Large camera motion and low video frame rates: if the displacement of the object between frames is too large, it will completely leave the bounding box of the previous frame, thus the trajectory will be broken.
+- Crowdedness: several objects are present within one bounding box and the Tracktor is unable to transfer the identity of the object to a previous bounding box. 
+## Approach
+**Box Enlargement:**
+To solve the first challenge we modified the code to enlarge the bounding box of the previous frame before the regression to increase the probability that the object of the current frame remains inside the (now enlarged) bounding box of the previous step. 
 
-![Visualization of Tracktor](data/method_vis_standalone.png)
+**Correlation Head:**
+The box enlargement however increases the chances of crowdedness and the object detector regression head might not be able to regress the box to the correct person. To remedy this problem, we implemented the correlation head, an extra regression head that will correlate the feature patches of the previous and current frame using the previous bounding box and the enlarged one respectively. This correlation head uses a correlation layer with its Siamese architecture that performs multiplicative patch comparisons between two feature maps.
+![Bounding box enlargement and correlation layer](data/readme/enlargement_correlation.png)
+The pink arrows and box show how our extensions adds to Tracktor++.
+![Visualization of Tracktor with the correlation layer](data/readme/method_correlation.png)
 
-## Installation
+## Experiments
+### Dataset
+MOT17 and MOT20 sequences were used to extract pairs of feature patches of the same track from consecutive frames in order to create a dataset for the correlation head training. Given that we use the enlarged box to extract the feature patch of the current frame, several datasets were created with different enlargement factors.
+### Training
+We trained 4 different correlation head models in order to evaluate the impact of the enlargement on the regression. The enlargement factors used were: 1.0, 1.2, 1.5 and 2.0.
+### Ablation Study
+Tracktor++ uses two extensions to improve its performance over Tracktor: a reID Siamese network, used to re-identify a person that was occluded for a short period of time and a camera motion compensation (CMC) algorithm to shift the bounding boxes before the regression in case of camera motion.
 
-1. Clone and enter this repository:
-  ```
-  git clone https://github.com/phil-bergmann/tracking_wo_bnw
-  cd tracking_wo_bnw
-  ```
+ Our hypothesis is that the correlation head combined with the box enlargement will outperform Tracktor++ without making use of the CMC. To validate the hypothesis the tests were conducted by combining the use of these extensions and the correlation head to evaluate its impact on Tracktor.
 
-2. Install packages for Python 3.7 in [virtualenv](https://uoa-eresearch.github.io/eresearch-cookbook/recipe/2014/11/26/python-virtual-env/):
-    1. `pip3 install -r requirements.txt`
-    2. Install Tracktor: `pip3 install -e .`
+Sequence 13 of the MOT17 Challenge was used as a validation dataset for all the experiments conducted,  it includes large camera motion, thus we chose it to evaluate how well the model is generalizing.
 
-3. MOTChallenge data:
-    1. Download [MOT17Det](https://motchallenge.net/data/MOT17Det.zip), [MOT16Labels](https://motchallenge.net/data/MOT16Labels.zip), [2DMOT2015](https://motchallenge.net/data/2DMOT2015.zip), [MOT16-det-dpm-raw](https://motchallenge.net/data/MOT16-det-dpm-raw.zip) and [MOT17Labels](https://motchallenge.net/data/MOT17Labels.zip) and place them in the `data` folder. As the images are the same for MOT17Det, MOT17 and MOT16 we only need one set of images for all three benchmarks.
-    2. Unzip all the data by executing:
-    ```
-    unzip -d MOT17Det MOT17Det.zip
-    unzip -d MOT16Labels MOT16Labels.zip
-    unzip -d 2DMOT2015 2DMOT2015.zip
-    unzip -d MOT16-det-dpm-raw MOT16-det-dpm-raw.zip
-    unzip -d MOT17Labels MOT17Labels.zip
-    ```
+## Results
+Performance measured on the test set of the [MOT17 Challenge](https://motchallenge.net/results/MOT17/).
+|Model | MOTA &#8593;| IDF1 &#8593;| IDs|
+|:---|---|---|---|
+|TracktorCorr | **56.3** | **55.4** | 2034|
+|Tracktor++v2 | **56.3** | 55.1 |**1987**|
+|Tracktor++ | 53.5 |52.3 | 2072|
 
-4. Download object detector and re-identifiaction Siamese network weights and MOTChallenge result files:
-    1. Download zip file from [here](https://vision.in.tum.de/webshare/u/meinhard/tracking_wo_bnw-output_v2.zip).
-    2. Extract in `output` directory.
+### Results Ablation Study on Sequence 13
 
-## Evaluate Tracktor
-In order to configure, organize, log and reproduce our computational experiments we structured our code with the [Sacred](http://sacred.readthedocs.io/en/latest/index.html) framework. For a detailed explanation of the Sacred interface please read its documentation.
+| MOTA &#8593;| IDF1 &#8593;| IDs|
+|:---|---|---|
+|![](data/readme/MOTA_report.png)|![](data/readme/IDF1_report.png)|![](data/readme/IDs_report.png)|
 
-1. Tracktor can be configured by changing the corresponding `experiments/cfgs/tracktor.yaml` config file. The default configuration runs Tracktor++ with the FPN object detector as described in the paper.
+## Installation, Dataset, Training, Evaluation
+Will be added later. (Also removing Colab dependencies).
 
-2. The default configuration is `Tracktor++`. Run `Tracktor++` by executing:
-
-  ```
-  python experiments/scripts/test_tracktor.py
-  ```
-
-3. The results are logged in the corresponding `output` directory.
-
-For reproducability, we provide the new result metrics of this updated code base on the `MOT17` challenge. It should be noted, that these surpass the original Tracktor results. This is due to the newly trained object detector. This version of Tracktor does not differ conceptually from the original ICCV 2019 version (see branch `iccv_19`). The results on the offical MOTChallenge [webpage](https://motchallenge.net/results/MOT17/) are denoted as the `Tracktor++v2` tracker. The train and test results are:
-
-```
-********************* MOT17 TRAIN Results *********************
-IDF1  IDP  IDR| Rcll  Prcn   FAR|   GT  MT   PT   ML|    FP    FN   IDs    FM|  MOTA  MOTP MOTAL
-65.2 83.8 53.3| 63.1  99.2  0.11| 1638 550  714  374|  1732124291   903  1258|  62.3  89.6  62.6
-
-********************* MOT17 TEST Results *********************
-IDF1  IDP  IDR| Rcll  Prcn   FAR|   GT  MT   PT   ML|    FP    FN   IDs    FM|  MOTA  MOTP MOTAL
-55.1 73.6 44.1| 58.3  97.4  0.50| 2355 498 1026  831|  8866235449  1987  3763|  56.3  78.8  56.7
-```
-
-## Train and test object detector (Faster-RCNN with FPN)
-
-For the object detector we followed the new native `torchvision` implementations of Faster-RCNN with FPN which are pretrained on COCO. The provided object detection model was trained and tested with [this](https://colab.research.google.com/drive/1_arNo-81SnqfbdtAhb3TBSU5H0JXQ0_1) Google Colab notebook. The `MOT17Det` train and test results are:
+## Acknowledgements and References
+Our code is developed based on [Tracktor++](https://git.io/fjQr8) and uses the [Pytorch Correlation module](https://github.com/ClementPinard/Pytorch-Correlation-extension). We thank Tim Meinhardt for the idea for this project and helpful feedback. The following works were used as references:
 
 ```
-********************* MOT17Det TRAIN Results ***********
-Average Precision: 0.9090
-Rcll  Prcn|  FAR     GT     TP     FP     FN| MODA  MODP
-97.9  93.8| 0.81  66393  64989   4330   1404| 91.4  87.4
-
-********************* MOT17Det TEST Results ***********
-Average Precision: 0.8150
-Rcll  Prcn|  FAR     GT     TP     FP     FN| MODA  MODP
-86.5  88.3| 2.23 114564  99132  13184  15432| 75.0  78.3
-```
-
-## Training the reidentifaction model
-
-1. The training config file is located at `experiments/cfgs/reid.yaml`.
-
-2. Start training by executing:
-  ```
-  python experiments/scripts/train_reid.py
-  ```
-
-## Publication
- If you use this software in your research, please cite our publication:
-
-```
-  @InProceedings{tracktor_2019_ICCV,
+  @InProceedings{paper_tracktor_2019_ICCV,
   author = {Bergmann, Philipp and Meinhardt, Tim and Leal{-}Taix{\'{e}}, Laura},
   title = {Tracking Without Bells and Whistles},
   booktitle = {The IEEE International Conference on Computer Vision (ICCV)},
   month = {October},
-  year = {2019}}
+  year = {2019}
+  }
+
+  @article{paper_flownet,
+  author    = {Philipp Fischer and Alexey Dosovitskiy and Eddy Ilg and
+               Philip H{\"{a}}usser and Caner Hazirbas and Vladimir Golkov and
+               Patrick van der Smagt and Daniel Cremers and Thomas Brox},
+  title     = {FlowNet: Learning Optical Flow with Convolutional Networks},
+  journal   = {CoRR},
+  volume    = {abs/1504.06852},
+  year      = {2015},
+  url       = {http://arxiv.org/abs/1504.06852}
+}
+
+@article{paper_mot16,
+  author    = {Anton Milan and Laura Leal{-}Taix{\'{e}} and
+               Ian D. Reid and Stefan Roth and Konrad Schindler},
+  title     = {{MOT16:} {A} Benchmark for Multi-Object Tracking},
+  journal   = {CoRR},
+  volume    = {abs/1603.00831},
+  year      = {2016},
+  url       = {http://arxiv.org/abs/1603.00831}
+}
 ```
